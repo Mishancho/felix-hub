@@ -31,4 +31,3 @@ databases:
     region: frankfurt
     plan: free
     databaseName: felix_hub_db
-    databaseUser: felix_hub_user
