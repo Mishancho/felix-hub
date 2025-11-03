@@ -25,9 +25,9 @@ services:
         sync: false
     healthCheckPath: /
 
+databases:
   # PostgreSQL Database
-  - type: pgsql
-    name: felix-hub-db
+  - name: felix-hub-db
     region: frankfurt
     plan: free
     databaseName: felix_hub_db
