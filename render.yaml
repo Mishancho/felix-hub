@@ -7,7 +7,7 @@ services:
     plan: free
     branch: main
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
@@ -23,6 +23,8 @@ services:
         sync: false
       - key: TELEGRAM_ADMIN_CHAT_ID
         sync: false
+      - key: ALLOW_ANONYMOUS_ORDERS
+        value: true
     healthCheckPath: /
 
 databases:
