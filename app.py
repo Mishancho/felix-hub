@@ -1537,16 +1537,24 @@ def run_auto_migrations():
         
         # Миграция 2: Многоязычность для запчастей
         if 'parts' in inspect(db.engine).get_table_names():
-            if not column_exists('parts', 'name_en'):
+            if not column_exists('parts', 'name_ru'):
                 print("  📋 Добавление многоязычности для запчастей...")
                 with db.engine.connect() as conn:
                     trans = conn.begin()
                     try:
-                        conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS name_en VARCHAR(250)"))
-                        conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS name_he VARCHAR(250)"))
-                        conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_en TEXT"))
-                        conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_he TEXT"))
-                        conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_ru TEXT"))
+                        # Добавляем все колонки для многоязычности
+                        if not column_exists('parts', 'name_en'):
+                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS name_en VARCHAR(250)"))
+                        if not column_exists('parts', 'name_he'):
+                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS name_he VARCHAR(250)"))
+                        if not column_exists('parts', 'name_ru'):
+                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS name_ru VARCHAR(250)"))
+                        if not column_exists('parts', 'description_en'):
+                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_en TEXT"))
+                        if not column_exists('parts', 'description_he'):
+                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_he TEXT"))
+                        if not column_exists('parts', 'description_ru'):
+                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_ru TEXT"))
                         trans.commit()
                         print("  ✅ Колонки для запчастей добавлены")
                     except Exception as e:

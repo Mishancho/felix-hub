@@ -105,6 +105,8 @@ def run_migrations():
                         conn.execute(text("ALTER TABLE parts ADD COLUMN name_en VARCHAR(250)"))
                     if not column_exists('parts', 'name_he'):
                         conn.execute(text("ALTER TABLE parts ADD COLUMN name_he VARCHAR(250)"))
+                    if not column_exists('parts', 'name_ru'):
+                        conn.execute(text("ALTER TABLE parts ADD COLUMN name_ru VARCHAR(250)"))
                     if not column_exists('parts', 'description_en'):
                         conn.execute(text("ALTER TABLE parts ADD COLUMN description_en TEXT"))
                     if not column_exists('parts', 'description_he'):
