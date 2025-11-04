@@ -1,0 +1,760 @@
+# English translations for Felix Hub
+# Copyright (C) 2025 Felix Hub
+# This file is distributed under the same license as Felix Hub.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Felix Hub 2.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-03 12:00+0000\n"
+"PO-Revision-Date: 2025-11-03 12:00+0000\n"
+"Last-Translator: Felix Hub Team\n"
+"Language: en\n"
+"Language-Team: English\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+# Навигация
+msgid "nav.parts_management"
+msgstr "Parts Management"
+
+msgid "nav.categories"
+msgstr "Categories"
+
+msgid "nav.mechanics"
+msgstr "Mechanics"
+
+msgid "nav.orders"
+msgstr "Orders"
+
+msgid "nav.dashboard"
+msgstr "Dashboard"
+
+msgid "nav.back"
+msgstr "Back"
+
+# Кнопки
+msgid "btn.add"
+msgstr "Add"
+
+msgid "btn.edit"
+msgstr "Edit"
+
+msgid "btn.delete"
+msgstr "Delete"
+
+msgid "btn.save"
+msgstr "Save"
+
+msgid "btn.cancel"
+msgstr "Cancel"
+
+msgid "btn.import"
+msgstr "Import"
+
+msgid "btn.export"
+msgstr "Export"
+
+msgid "btn.search"
+msgstr "Search"
+
+msgid "btn.filter"
+msgstr "Filter"
+
+msgid "btn.apply"
+msgstr "Apply"
+
+# Запчасти
+msgid "parts.title"
+msgstr "Parts and Categories Management"
+
+msgid "parts.add_part"
+msgstr "+ Part"
+
+msgid "parts.add_category"
+msgstr "+ Category"
+
+msgid "parts.part_number"
+msgstr "Part Number"
+
+msgid "parts.name"
+msgstr "Name"
+
+msgid "parts.category"
+msgstr "Category"
+
+msgid "parts.description"
+msgstr "Description"
+
+msgid "parts.price"
+msgstr "Price"
+
+msgid "parts.in_stock"
+msgstr "In Stock"
+
+msgid "parts.status"
+msgstr "Status"
+
+msgid "parts.actions"
+msgstr "Actions"
+
+msgid "parts.active"
+msgstr "Active"
+
+msgid "parts.inactive"
+msgstr "Inactive"
+
+msgid "parts.sort_order"
+msgstr "Sort Order"
+
+# Форма запчасти
+msgid "form.names_in_languages"
+msgstr "🌍 Names in three languages"
+
+msgid "form.name_russian"
+msgstr "Name in Russian *"
+
+msgid "form.name_english"
+msgstr "Name in English"
+
+msgid "form.name_hebrew"
+msgstr "Name in Hebrew"
+
+msgid "form.descriptions"
+msgstr "📝 Descriptions (optional)"
+
+msgid "form.description_russian"
+msgstr "Description in Russian"
+
+msgid "form.description_english"
+msgstr "Description in English"
+
+msgid "form.description_hebrew"
+msgstr "Description in Hebrew"
+
+msgid "form.settings"
+msgstr "⚙️ Settings"
+
+msgid "form.category_required"
+msgstr "Category *"
+
+msgid "form.select_category"
+msgstr "Select category"
+
+# Статистика
+msgid "stats.total_categories"
+msgstr "Categories"
+
+msgid "stats.total_parts"
+msgstr "Total Parts"
+
+msgid "stats.active_parts"
+msgstr "Active"
+
+# Сообщения
+msgid "msg.part_added"
+msgstr "Part added"
+
+msgid "msg.part_updated"
+msgstr "Part updated"
+
+msgid "msg.part_deleted"
+msgstr "Part deleted"
+
+msgid "msg.category_added"
+msgstr "Category added"
+
+msgid "msg.category_updated"
+msgstr "Category updated"
+
+msgid "msg.category_deleted"
+msgstr "Category deleted"
+
+msgid "msg.confirm_delete"
+msgstr "Are you sure you want to delete?"
+
+msgid "msg.error_loading"
+msgstr "Error loading data"
+
+msgid "msg.error_saving"
+msgstr "Error saving data"
+
+# Фильтры
+msgid "filter.search"
+msgstr "Search"
+
+msgid "filter.category"
+msgstr "Category"
+
+msgid "filter.status"
+msgstr "Status"
+
+msgid "filter.all"
+msgstr "All"
+
+msgid "filter.all_categories"
+msgstr "All categories"
+
+# Пустое состояние
+msgid "empty.no_parts"
+msgstr "No parts found"
+
+msgid "empty.no_categories"
+msgstr "No categories"
+
+msgid "empty.try_different_filters"
+msgstr "Try changing the filters"
+
+# New keys for admin/parts.html
+msgid "parts_management"
+msgstr "Parts Management"
+
+msgid "back"
+msgstr "Back"
+
+msgid "import_catalog"
+msgstr "Import"
+
+msgid "add_category"
+msgstr "Category"
+
+msgid "add_part"
+msgstr "Part"
+
+msgid "total_categories"
+msgstr "Categories"
+
+msgid "total_parts"
+msgstr "Total Parts"
+
+msgid "active_parts"
+msgstr "Active"
+
+msgid "parts"
+msgstr "Parts"
+
+msgid "categories"
+msgstr "Categories"
+
+msgid "search"
+msgstr "Search"
+
+msgid "search_placeholder"
+msgstr "Part name..."
+
+msgid "category"
+msgstr "Category"
+
+msgid "all_categories"
+msgstr "All Categories"
+
+msgid "status"
+msgstr "Status"
+
+msgid "all_parts"
+msgstr "All"
+
+msgid "active_only"
+msgstr "Active"
+
+msgid "inactive_only"
+msgstr "Inactive"
+
+msgid "add_category_title"
+msgstr "Add Category"
+
+msgid "category_name"
+msgstr "Name"
+
+msgid "category_name_placeholder"
+msgstr "Example: Brakes"
+
+msgid "sort_order"
+msgstr "Sort Order"
+
+msgid "is_active"
+msgstr "Active"
+
+msgid "cancel"
+msgstr "Cancel"
+
+msgid "save"
+msgstr "Save"
+
+msgid "add_part_title"
+msgstr "Add Part"
+
+msgid "names_in_languages"
+msgstr "Names in Three Languages"
+
+msgid "part_name_ru"
+msgstr "Name in Russian"
+
+msgid "part_name_ru_placeholder"
+msgstr "Например: Передние колодки"
+
+msgid "part_name_en"
+msgstr "Name in English"
+
+msgid "part_name_en_placeholder"
+msgstr "Example: Front brake pads"
+
+msgid "part_name_he"
+msgstr "Name in Hebrew"
+
+msgid "part_name_he_placeholder"
+msgstr "דוגמה: רפידות בלם קדמיות"
+
+msgid "descriptions_optional"
+msgstr "Descriptions (Optional)"
+
+msgid "part_desc_ru"
+msgstr "Description in Russian"
+
+msgid "part_desc_placeholder"
+msgstr "Additional information..."
+
+msgid "part_desc_en"
+msgstr "Description in English"
+
+msgid "part_desc_en_placeholder"
+msgstr "Additional information..."
+
+msgid "part_desc_he"
+msgstr "Description in Hebrew"
+
+msgid "part_desc_he_placeholder"
+msgstr "מידע נוסף..."
+
+msgid "settings"
+msgstr "Settings"
+
+msgid "part_category"
+msgstr "Category"
+
+msgid "choose_category"
+msgstr "Choose Category"
+
+# Admin.html translations
+msgid "admin_panel"
+msgstr "Admin Panel"
+
+msgid "admin_panel_title"
+msgstr "Felix Hub Admin Panel"
+
+msgid "home"
+msgstr "Home"
+
+msgid "logout"
+msgstr "Logout"
+
+msgid "orders"
+msgstr "Orders"
+
+msgid "mechanics"
+msgstr "Mechanics"
+
+msgid "total_orders"
+msgstr "Total Orders"
+
+msgid "new_orders"
+msgstr "New"
+
+msgid "in_progress"
+msgstr "In Progress"
+
+msgid "ready"
+msgstr "Ready"
+
+msgid "all"
+msgstr "All"
+
+msgid "new"
+msgstr "New"
+
+msgid "cancelled"
+msgstr "Cancelled"
+
+msgid "plate_number"
+msgstr "Plate Number"
+
+msgid "mechanic"
+msgstr "Mechanic"
+
+msgid "mechanic_name"
+msgstr "Mechanic name"
+
+msgid "refresh"
+msgstr "Refresh"
+
+msgid "orders_list"
+msgstr "Orders List"
+
+msgid "loading"
+msgstr "Loading data..."
+
+msgid "no_orders_found"
+msgstr "No orders found"
+
+msgid "error_loading_data"
+msgstr "Error loading data"
+
+msgid "order_id"
+msgstr "ID"
+
+msgid "car_number"
+msgstr "Plate Number"
+
+msgid "details"
+msgstr "Details"
+
+msgid "date"
+msgstr "Date"
+
+msgid "actions"
+msgstr "Actions"
+
+msgid "original"
+msgstr "Original"
+
+msgid "analog"
+msgstr "Analog"
+
+msgid "print"
+msgstr "Print"
+
+msgid "delete"
+msgstr "Delete"
+
+msgid "confirm_delete_order"
+msgstr "Are you sure you want to delete order"
+
+msgid "order_marked_ready"
+msgstr "Order marked as ready. Mechanic will be notified."
+
+msgid "error_updating_status"
+msgstr "Error updating status"
+
+msgid "print_sent"
+msgstr "Receipt sent to print"
+
+msgid "error_printing"
+msgstr "Error printing"
+
+msgid "order_deleted"
+msgstr "Order deleted"
+
+msgid "error_deleting"
+msgstr "Error deleting"
+
+# Mechanic interface translations
+msgid "mechanic_login"
+msgstr "Mechanic Login"
+
+msgid "username"
+msgstr "Username"
+
+msgid "enter_username"
+msgstr "Enter your username"
+
+msgid "password"
+msgstr "Password"
+
+msgid "enter_password"
+msgstr "Enter your password"
+
+msgid "remember_me"
+msgstr "Remember me"
+
+msgid "login"
+msgstr "Login"
+
+msgid "or"
+msgstr "or"
+
+msgid "back_to_home"
+msgstr "Back to home"
+
+msgid "dashboard"
+msgstr "Dashboard"
+
+msgid "hello"
+msgstr "Hello"
+
+msgid "my_orders"
+msgstr "My Orders"
+
+msgid "new_order"
+msgstr "New Order"
+
+msgid "profile"
+msgstr "Profile"
+
+msgid "status_new"
+msgstr "New"
+
+msgid "status_in_progress"
+msgstr "In Progress"
+
+msgid "status_ready"
+msgstr "Ready"
+
+msgid "status_delivered"
+msgstr "Delivered"
+
+msgid "status_cancelled"
+msgstr "Cancelled"
+
+msgid "recent_orders"
+msgstr "Recent Orders"
+
+msgid "order"
+msgstr "Order"
+
+msgid "view_all_orders"
+msgstr "View all orders"
+
+msgid "no_orders_yet"
+msgstr "No orders yet"
+
+msgid "create_first_order"
+msgstr "Create your first order!"
+
+msgid "back_to_dashboard"
+msgstr "Back to dashboard"
+
+msgid "fill_order_form"
+msgstr "Fill in the form to create an order"
+
+msgid "parts_category"
+msgstr "Parts Category"
+
+msgid "select_category"
+msgstr "Select category"
+
+msgid "select_parts_from_list"
+msgstr "Select parts from list"
+
+msgid "select_category_first"
+msgstr "Select category first"
+
+msgid "or_add_manually"
+msgstr "Or add manually"
+
+msgid "add_part"
+msgstr "Add part"
+
+msgid "parts_type"
+msgstr "Parts Type"
+
+msgid "comment"
+msgstr "Comment"
+
+msgid "optional"
+msgstr "optional"
+
+msgid "additional_info"
+msgstr "Additional information"
+
+msgid "create_order"
+msgstr "Create Order"
+
+msgid "part_name"
+msgstr "Part name"
+
+msgid "error_loading_catalog"
+msgstr "Error loading catalog"
+
+msgid "select_at_least_one_part"
+msgstr "Select at least one part!"
+
+msgid "successfully_created"
+msgstr "successfully created"
+
+msgid "error"
+msgstr "Error"
+
+msgid "submission_error"
+msgstr "Submission error"
+
+msgid "all_statuses"
+msgstr "All statuses"
+
+msgid "search_by_plate"
+msgstr "Search by plate number"
+
+msgid "apply"
+msgstr "Apply"
+
+msgid "found"
+msgstr "Found"
+
+msgid "type"
+msgstr "Type"
+
+msgid "created"
+msgstr "Created"
+
+msgid "try_different_filters"
+msgstr "Try different filters or create a new order"
+
+msgid "my_profile"
+msgstr "My Profile"
+
+msgid "personal_info"
+msgstr "Personal Information"
+
+msgid "full_name"
+msgstr "Full Name"
+
+msgid "telegram_id_hint"
+msgstr "To receive order ready notifications"
+
+msgid "phone"
+msgstr "Phone"
+
+msgid "save_changes"
+msgstr "Save Changes"
+
+msgid "change_password"
+msgstr "Change Password"
+
+msgid "password_hint"
+msgstr "Password must be at least 6 characters"
+
+msgid "current_password"
+msgstr "Current Password"
+
+msgid "new_password"
+msgstr "New Password"
+
+msgid "confirm_new_password"
+msgstr "Confirm New Password"
+
+msgid "profile_updated"
+msgstr "Profile successfully updated"
+
+msgid "passwords_dont_match"
+msgstr "Passwords don't match"
+
+msgid "password_changed"
+msgstr "Password successfully changed"
+
+msgid "telegram_notifications"
+msgstr "Telegram Notifications"
+
+msgid "telegram_id_not_set"
+msgstr "Telegram ID is not set. Set it in"
+
+msgid "to_receive_notifications"
+msgstr "to receive notifications."
+
+msgid "order_ready"
+msgstr "Order Ready"
+
+msgid "notify_when_ready"
+msgstr "Notification when your order is ready for pickup"
+
+msgid "order_in_progress"
+msgstr "Order In Progress"
+
+msgid "notify_when_processing"
+msgstr "Notification when order is being processed"
+
+msgid "order_cancelled"
+msgstr "Order Cancelled"
+
+msgid "notify_when_cancelled"
+msgstr "Notification when order is cancelled"
+
+msgid "save_settings"
+msgstr "Save Settings"
+
+msgid "settings_saved"
+msgstr "Settings successfully saved"
+
+# Admin panel translations
+msgid "admin_login"
+msgstr "Admin Login"
+
+msgid "admin_panel"
+msgstr "Admin Panel"
+
+msgid "enter_admin_password"
+msgstr "Enter password to login"
+
+msgid "manage_mechanics"
+msgstr "Manage Mechanics"
+
+msgid "add_mechanic"
+msgstr "Add Mechanic"
+
+msgid "edit_mechanic"
+msgstr "Edit Mechanic"
+
+msgid "mechanic_list"
+msgstr "Mechanics List"
+
+msgid "total"
+msgstr "Total"
+
+msgid "active_plural"
+msgstr "Active"
+
+msgid "inactive_plural"
+msgstr "Inactive"
+
+msgid "loading"
+msgstr "Loading..."
+
+msgid "no_mechanics_yet"
+msgstr "No mechanics yet"
+
+msgid "mechanic_id"
+msgstr "ID"
+
+msgid "actions"
+msgstr "Actions"
+
+msgid "deactivate"
+msgstr "Deactivate"
+
+msgid "activate"
+msgstr "Activate"
+
+msgid "active"
+msgstr "Active"
+
+msgid "inactive"
+msgstr "Inactive"
+
+msgid "password_required_on_create"
+msgstr "Password is required when creating"
+
+msgid "min_6_chars"
+msgstr "Minimum 6 characters"
+
+msgid "leave_empty_to_keep"
+msgstr "Leave empty when editing to keep current password."
+
+msgid "notify_on_order_ready"
+msgstr "Notify when order is ready"
+
+msgid "mechanic_created"
+msgstr "Mechanic created"
+
+msgid "mechanic_updated"
+msgstr "Mechanic updated"
+
+msgid "mechanic_activated"
+msgstr "Mechanic activated"
+
+msgid "mechanic_deactivated"
+msgstr "Mechanic deactivated"
+
+msgid "error_loading_data"
+msgstr "Error loading data"
+

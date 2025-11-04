@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ g.locale if g.locale else 'ru' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление запчастями - Felix Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - Управление запчастями">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{{ _('parts_management') }} - Felix Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -11,23 +16,55 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
             min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-header h1 {
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn-white {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         .container {
             max-width: 1600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 30px 20px;
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
         }
 
         .header h1 { color: #2c3e50; }
@@ -176,17 +213,34 @@
 
         .modal-content {
             background: white;
-            padding: 30px;
+            padding: 0;
             border-radius: 8px;
-            max-width: 500px;
+            max-width: 700px;
             width: 90%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            padding: 20px 30px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        
+        .modal-body {
+            padding: 20px 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
         }
 
         .modal-header h2 { margin: 0; color: #2c3e50; }
@@ -212,12 +266,19 @@
         }
 
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
         }
 
         .checkbox-group {
@@ -256,17 +317,36 @@
             border: 1px solid #f5c6cb;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/language-switcher.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📦 Управление запчастями и категориями</h1>
-            <div class="action-buttons">
-                <a href="/admin" class="btn btn-secondary">← Назад</a>
-                <button class="btn btn-warning" onclick="importDefaultCatalog()">📥 Импорт</button>
-                <button class="btn btn-success" onclick="openAddCategoryModal()">+ Категория</button>
-                <button class="btn btn-success" onclick="openAddPartModal()">+ Запчасть</button>
+    <!-- Переключатель языка -->
+    <div id="languageSwitcher" class="language-switcher">
+        <div class="lang-selector">
+            <span class="lang-icon">🌍</span>
+            <select id="langSelect" class="lang-select" onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)">
+                <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
+                <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
+                <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>📦 {{ _('parts_management') if _('parts_management') != 'parts_management' else 'Управление запчастями' }}</h1>
+            <div class="header-actions">
+                <a href="/admin" class="btn btn-white">← {{ _('back') if _('back') != 'back' else 'Назад' }}</a>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-white">{{ _('logout') if _('logout') != 'logout' else 'Выход' }}</a>
             </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <button class="btn btn-warning" onclick="importDefaultCatalog()">📥 {{ _('import_catalog') }}</button>
+            <button class="btn btn-success" onclick="openAddCategoryModal()">+ {{ _('add_category') }}</button>
+            <button class="btn btn-success" onclick="openAddPartModal()">+ {{ _('add_part') }}</button>
         </div>
 
         <div id="alertContainer"></div>
@@ -274,41 +354,41 @@
         <div class="stats-bar">
             <div class="stat-item">
                 <div class="stat-value" id="totalCategories">0</div>
-                <div class="stat-label">Категорий</div>
+                <div class="stat-label">{{ _('total_categories') }}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" id="totalParts">0</div>
-                <div class="stat-label">Всего запчастей</div>
+                <div class="stat-label">{{ _('total_parts') }}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" id="activeParts">0</div>
-                <div class="stat-label">Активных</div>
+                <div class="stat-label">{{ _('active_parts') }}</div>
             </div>
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('parts', event)">📋 Запчасти</button>
-            <button class="tab" onclick="switchTab('categories', event)">📁 Категории</button>
+            <button class="tab active" onclick="switchTab('parts', event)">📋 {{ _('parts') }}</button>
+            <button class="tab" onclick="switchTab('categories', event)">📁 {{ _('categories') }}</button>
         </div>
 
         <div id="partsTab">
             <div class="filters">
                 <div class="filter-group">
-                    <label>Поиск</label>
-                    <input type="text" id="searchInput" placeholder="Название запчасти...">
+                    <label>{{ _('search') }}</label>
+                    <input type="text" id="searchInput" placeholder="{{ _('search_placeholder') }}">
                 </div>
                 <div class="filter-group">
-                    <label>Категория</label>
+                    <label>{{ _('category') }}</label>
                     <select id="categoryFilter">
-                        <option value="all">Все категории</option>
+                        <option value="all">{{ _('all_categories') }}</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Статус</label>
+                    <label>{{ _('status') }}</label>
                     <select id="statusFilter">
-                        <option value="all">Все</option>
-                        <option value="active" selected>Активные</option>
-                        <option value="inactive">Неактивные</option>
+                        <option value="all">{{ _('all_parts') }}</option>
+                        <option value="active" selected>{{ _('active_only') }}</option>
+                        <option value="inactive">{{ _('inactive_only') }}</option>
                     </select>
                 </div>
                 <div class="filter-group" style="display: flex; align-items: flex-end;">
@@ -327,69 +407,135 @@
     <div id="categoryModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="categoryModalTitle">Добавить категорию</h2>
+                <h2 id="categoryModalTitle">{{ _('add_category_title') }}</h2>
                 <button class="close-modal" onclick="closeCategoryModal()">×</button>
             </div>
-            <form id="categoryForm" onsubmit="saveCategory(event)">
-                <input type="hidden" id="categoryId">
-                <div class="form-group">
-                    <label>Название *</label>
-                    <input type="text" id="categoryName" required placeholder="Например: Тормоза">
-                </div>
-                <div class="form-group">
-                    <label>Порядок сортировки</label>
-                    <input type="number" id="categorySortOrder" value="0">
-                </div>
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="categoryIsActive" checked>
-                        <label for="categoryIsActive">Активна</label>
+            <div class="modal-body">
+                <form id="categoryForm" onsubmit="saveCategory(event)">
+                    <input type="hidden" id="categoryId">
+                    
+                    <h3 style="margin: 20px 0 10px; color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                        🌍 {{ _('names_in_languages') if _('names_in_languages') != 'names_in_languages' else 'Названия на языках' }}
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label>{{ _('category_name') }} ({{ _('russian') if _('russian') != 'russian' else 'Русский' }}) *</label>
+                        <input type="text" id="categoryName" required placeholder="{{ _('category_name_placeholder') if _('category_name_placeholder') != 'category_name_placeholder' else 'Введите название на русском' }}">
                     </div>
-                </div>
-                <div class="action-buttons">
-                    <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">Отмена</button>
-                    <button type="submit" class="btn btn-success">Сохранить</button>
-                </div>
-            </form>
+                    
+                    <div class="form-group">
+                        <label>{{ _('category_name') }} ({{ _('english') if _('english') != 'english' else 'English' }})</label>
+                        <input type="text" id="categoryNameEn" placeholder="{{ _('category_name_en_placeholder') if _('category_name_en_placeholder') != 'category_name_en_placeholder' else 'Enter name in English' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>{{ _('category_name') }} ({{ _('hebrew') if _('hebrew') != 'hebrew' else 'עברית' }})</label>
+                        <input type="text" id="categoryNameHe" placeholder="{{ _('category_name_he_placeholder') if _('category_name_he_placeholder') != 'category_name_he_placeholder' else 'הזן שם בעברית' }}" dir="rtl">
+                    </div>
+                    
+                    <h3 style="margin: 20px 0 10px; color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                        ⚙️ {{ _('settings') if _('settings') != 'settings' else 'Настройки' }}
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label>{{ _('sort_order') }}</label>
+                        <input type="number" id="categorySortOrder" value="0">
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="categoryIsActive" checked>
+                            <label for="categoryIsActive">{{ _('is_active') }}</label>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">{{ _('cancel') }}</button>
+                        <button type="submit" class="btn btn-success">{{ _('save') }}</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <div id="partModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
-                <h2 id="partModalTitle">Добавить запчасть</h2>
+                <h2 id="partModalTitle">{{ _('add_part_title') }}</h2>
                 <button class="close-modal" onclick="closePartModal()">×</button>
             </div>
-            <form id="partForm" onsubmit="savePart(event)">
-                <input type="hidden" id="partId">
-                <div class="form-group">
-                    <label>Название *</label>
-                    <input type="text" id="partName" required placeholder="Например: Передние колодки">
-                </div>
-                <div class="form-group">
-                    <label>Категория *</label>
-                    <select id="partCategory" required>
-                        <option value="">Выберите категорию</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Порядок сортировки</label>
-                    <input type="number" id="partSortOrder" value="0">
-                </div>
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="partIsActive" checked>
-                        <label for="partIsActive">Активна</label>
+            <div class="modal-body">
+                <form id="partForm" onsubmit="savePart(event)">
+                    <input type="hidden" id="partId">
+                    
+                    <h3 style="margin: 20px 0 10px; color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                        🌍 {{ _('names_in_languages') }}
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label>{{ _('part_name_ru') }} *</label>
+                        <input type="text" id="partNameRu" required placeholder="{{ _('part_name_ru_placeholder') }}">
                     </div>
-                </div>
-                <div class="action-buttons">
-                    <button type="button" class="btn btn-secondary" onclick="closePartModal()">Отмена</button>
-                    <button type="submit" class="btn btn-success">Сохранить</button>
-                </div>
-            </form>
+                    
+                    <div class="form-group">
+                        <label>{{ _('part_name_en') }}</label>
+                        <input type="text" id="partNameEn" placeholder="{{ _('part_name_en_placeholder') }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>{{ _('part_name_he') }}</label>
+                        <input type="text" id="partNameHe" placeholder="{{ _('part_name_he_placeholder') }}" dir="rtl">
+                    </div>
+                    
+                    <h3 style="margin: 20px 0 10px; color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                        📝 {{ _('descriptions_optional') }}
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label>{{ _('part_desc_ru') }}</label>
+                        <textarea id="partDescRu" rows="2" placeholder="{{ _('part_desc_placeholder') }}"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>{{ _('part_desc_en') }}</label>
+                        <textarea id="partDescEn" rows="2" placeholder="{{ _('part_desc_en_placeholder') }}"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>{{ _('part_desc_he') }}</label>
+                        <textarea id="partDescHe" rows="2" placeholder="{{ _('part_desc_he_placeholder') }}" dir="rtl"></textarea>
+                    </div>
+                    
+                    <h3 style="margin: 20px 0 10px; color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                        ⚙️ {{ _('settings') }}
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label>{{ _('part_category') }} *</label>
+                        <select id="partCategory" required>
+                            <option value="">{{ _('choose_category') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ _('sort_order') }}</label>
+                        <input type="number" id="partSortOrder" value="0">
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="partIsActive" checked>
+                            <label for="partIsActive">{{ _('is_active') }}</label>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="closePartModal()">{{ _('cancel') }}</button>
+                        <button type="submit" class="btn btn-success">{{ _('save') }}</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
+    <script src="/static/js/language.js"></script>
+    <script src="/static/js/language-switcher.js"></script>
     <script src="/static/js/parts-manager.js"></script>
+    <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,760 @@
+# Russian translations for Felix Hub
+# Copyright (C) 2025 Felix Hub
+# This file is distributed under the same license as Felix Hub.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Felix Hub 2.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-03 12:00+0000\n"
+"PO-Revision-Date: 2025-11-03 12:00+0000\n"
+"Last-Translator: Felix Hub Team\n"
+"Language: ru\n"
+"Language-Team: Russian\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+# Навигация
+msgid "nav.parts_management"
+msgstr "Управление запчастями"
+
+msgid "nav.categories"
+msgstr "Категории"
+
+msgid "nav.mechanics"
+msgstr "Механики"
+
+msgid "nav.orders"
+msgstr "Заказы"
+
+msgid "nav.dashboard"
+msgstr "Панель управления"
+
+msgid "nav.back"
+msgstr "Назад"
+
+# Кнопки
+msgid "btn.add"
+msgstr "Добавить"
+
+msgid "btn.edit"
+msgstr "Редактировать"
+
+msgid "btn.delete"
+msgstr "Удалить"
+
+msgid "btn.save"
+msgstr "Сохранить"
+
+msgid "btn.cancel"
+msgstr "Отмена"
+
+msgid "btn.import"
+msgstr "Импорт"
+
+msgid "btn.export"
+msgstr "Экспорт"
+
+msgid "btn.search"
+msgstr "Поиск"
+
+msgid "btn.filter"
+msgstr "Фильтр"
+
+msgid "btn.apply"
+msgstr "Применить"
+
+# Запчасти
+msgid "parts.title"
+msgstr "Управление запчастями и категориями"
+
+msgid "parts.add_part"
+msgstr "+ Запчасть"
+
+msgid "parts.add_category"
+msgstr "+ Категория"
+
+msgid "parts.part_number"
+msgstr "Артикул"
+
+msgid "parts.name"
+msgstr "Название"
+
+msgid "parts.category"
+msgstr "Категория"
+
+msgid "parts.description"
+msgstr "Описание"
+
+msgid "parts.price"
+msgstr "Цена"
+
+msgid "parts.in_stock"
+msgstr "В наличии"
+
+msgid "parts.status"
+msgstr "Статус"
+
+msgid "parts.actions"
+msgstr "Действия"
+
+msgid "parts.active"
+msgstr "Активна"
+
+msgid "parts.inactive"
+msgstr "Неактивна"
+
+msgid "parts.sort_order"
+msgstr "Порядок сортировки"
+
+# Форма запчасти
+msgid "form.names_in_languages"
+msgstr "🌍 Названия на трех языках"
+
+msgid "form.name_russian"
+msgstr "Название на русском *"
+
+msgid "form.name_english"
+msgstr "Название на английском"
+
+msgid "form.name_hebrew"
+msgstr "Название на иврите"
+
+msgid "form.descriptions"
+msgstr "📝 Описания (опционально)"
+
+msgid "form.description_russian"
+msgstr "Описание на русском"
+
+msgid "form.description_english"
+msgstr "Описание на английском"
+
+msgid "form.description_hebrew"
+msgstr "Описание на иврите"
+
+msgid "form.settings"
+msgstr "⚙️ Настройки"
+
+msgid "form.category_required"
+msgstr "Категория *"
+
+msgid "form.select_category"
+msgstr "Выберите категорию"
+
+# Статистика
+msgid "stats.total_categories"
+msgstr "Категорий"
+
+msgid "stats.total_parts"
+msgstr "Всего запчастей"
+
+msgid "stats.active_parts"
+msgstr "Активных"
+
+# Сообщения
+msgid "msg.part_added"
+msgstr "Запчасть добавлена"
+
+msgid "msg.part_updated"
+msgstr "Запчасть обновлена"
+
+msgid "msg.part_deleted"
+msgstr "Запчасть удалена"
+
+msgid "msg.category_added"
+msgstr "Категория добавлена"
+
+msgid "msg.category_updated"
+msgstr "Категория обновлена"
+
+msgid "msg.category_deleted"
+msgstr "Категория удалена"
+
+msgid "msg.confirm_delete"
+msgstr "Вы уверены, что хотите удалить?"
+
+msgid "msg.error_loading"
+msgstr "Ошибка загрузки данных"
+
+msgid "msg.error_saving"
+msgstr "Ошибка сохранения данных"
+
+# Фильтры
+msgid "filter.search"
+msgstr "Поиск"
+
+msgid "filter.category"
+msgstr "Категория"
+
+msgid "filter.status"
+msgstr "Статус"
+
+msgid "filter.all"
+msgstr "Все"
+
+msgid "filter.all_categories"
+msgstr "Все категории"
+
+# Пустое состояние
+msgid "empty.no_parts"
+msgstr "Запчасти не найдены"
+
+msgid "empty.no_categories"
+msgstr "Категорий нет"
+
+msgid "empty.try_different_filters"
+msgstr "Попробуйте изменить фильтры"
+
+# Новые ключи для admin/parts.html
+msgid "parts_management"
+msgstr "Управление запчастями"
+
+msgid "back"
+msgstr "Назад"
+
+msgid "import_catalog"
+msgstr "Импорт"
+
+msgid "add_category"
+msgstr "Категория"
+
+msgid "add_part"
+msgstr "Запчасть"
+
+msgid "total_categories"
+msgstr "Категорий"
+
+msgid "total_parts"
+msgstr "Всего запчастей"
+
+msgid "active_parts"
+msgstr "Активных"
+
+msgid "parts"
+msgstr "Запчасти"
+
+msgid "categories"
+msgstr "Категории"
+
+msgid "search"
+msgstr "Поиск"
+
+msgid "search_placeholder"
+msgstr "Название запчасти..."
+
+msgid "category"
+msgstr "Категория"
+
+msgid "all_categories"
+msgstr "Все категории"
+
+msgid "status"
+msgstr "Статус"
+
+msgid "all_parts"
+msgstr "Все"
+
+msgid "active_only"
+msgstr "Активные"
+
+msgid "inactive_only"
+msgstr "Неактивные"
+
+msgid "add_category_title"
+msgstr "Добавить категорию"
+
+msgid "category_name"
+msgstr "Название"
+
+msgid "category_name_placeholder"
+msgstr "Например: Тормоза"
+
+msgid "sort_order"
+msgstr "Порядок сортировки"
+
+msgid "is_active"
+msgstr "Активна"
+
+msgid "cancel"
+msgstr "Отмена"
+
+msgid "save"
+msgstr "Сохранить"
+
+msgid "add_part_title"
+msgstr "Добавить запчасть"
+
+msgid "names_in_languages"
+msgstr "Названия на трех языках"
+
+msgid "part_name_ru"
+msgstr "Название на русском"
+
+msgid "part_name_ru_placeholder"
+msgstr "Например: Передние колодки"
+
+msgid "part_name_en"
+msgstr "Название на английском"
+
+msgid "part_name_en_placeholder"
+msgstr "Example: Front brake pads"
+
+msgid "part_name_he"
+msgstr "Название на иврите"
+
+msgid "part_name_he_placeholder"
+msgstr "דוגמה: רפידות בלם קדמיות"
+
+msgid "descriptions_optional"
+msgstr "Описания (опционально)"
+
+msgid "part_desc_ru"
+msgstr "Описание на русском"
+
+msgid "part_desc_placeholder"
+msgstr "Дополнительная информация..."
+
+msgid "part_desc_en"
+msgstr "Описание на английском"
+
+msgid "part_desc_en_placeholder"
+msgstr "Additional information..."
+
+msgid "part_desc_he"
+msgstr "Описание на иврите"
+
+msgid "part_desc_he_placeholder"
+msgstr "מידע נוסף..."
+
+msgid "settings"
+msgstr "Настройки"
+
+msgid "part_category"
+msgstr "Категория"
+
+msgid "choose_category"
+msgstr "Выберите категорию"
+
+# Admin.html translations
+msgid "admin_panel"
+msgstr "Админ панель"
+
+msgid "admin_panel_title"
+msgstr "Панель администратора Felix Hub"
+
+msgid "home"
+msgstr "Главная"
+
+msgid "logout"
+msgstr "Выход"
+
+msgid "orders"
+msgstr "Заказы"
+
+msgid "mechanics"
+msgstr "Механики"
+
+msgid "total_orders"
+msgstr "Всего заказов"
+
+msgid "new_orders"
+msgstr "Новых"
+
+msgid "in_progress"
+msgstr "В работе"
+
+msgid "ready"
+msgstr "Готово"
+
+msgid "all"
+msgstr "Все"
+
+msgid "new"
+msgstr "Новые"
+
+msgid "cancelled"
+msgstr "Отменённые"
+
+msgid "plate_number"
+msgstr "Гос номер"
+
+msgid "mechanic"
+msgstr "Механик"
+
+msgid "mechanic_name"
+msgstr "Имя механика"
+
+msgid "refresh"
+msgstr "Обновить"
+
+msgid "orders_list"
+msgstr "Список заказов"
+
+msgid "loading"
+msgstr "Загрузка данных..."
+
+msgid "no_orders_found"
+msgstr "Заказов не найдено"
+
+msgid "error_loading_data"
+msgstr "Ошибка загрузки данных"
+
+msgid "order_id"
+msgstr "ID"
+
+msgid "car_number"
+msgstr "Гос номер"
+
+msgid "details"
+msgstr "Детали"
+
+msgid "date"
+msgstr "Дата"
+
+msgid "actions"
+msgstr "Действия"
+
+msgid "original"
+msgstr "Оригинал"
+
+msgid "analog"
+msgstr "Аналог"
+
+msgid "print"
+msgstr "Печать"
+
+msgid "delete"
+msgstr "Удалить"
+
+msgid "confirm_delete_order"
+msgstr "Вы уверены, что хотите удалить заказ"
+
+msgid "order_marked_ready"
+msgstr "Заказ помечен как готовый. Механик получит уведомление."
+
+msgid "error_updating_status"
+msgstr "Ошибка обновления статуса"
+
+msgid "print_sent"
+msgstr "Чек отправлен на печать"
+
+msgid "error_printing"
+msgstr "Ошибка печати"
+
+msgid "order_deleted"
+msgstr "Заказ удалён"
+
+msgid "error_deleting"
+msgstr "Ошибка удаления"
+
+# Mechanic interface translations
+msgid "mechanic_login"
+msgstr "Вход для механиков"
+
+msgid "username"
+msgstr "Имя пользователя"
+
+msgid "enter_username"
+msgstr "Введите ваш username"
+
+msgid "password"
+msgstr "Пароль"
+
+msgid "enter_password"
+msgstr "Введите ваш пароль"
+
+msgid "remember_me"
+msgstr "Запомнить меня"
+
+msgid "login"
+msgstr "Войти"
+
+msgid "or"
+msgstr "или"
+
+msgid "back_to_home"
+msgstr "Вернуться на главную"
+
+msgid "dashboard"
+msgstr "Личный кабинет"
+
+msgid "hello"
+msgstr "Привет"
+
+msgid "my_orders"
+msgstr "Мои заказы"
+
+msgid "new_order"
+msgstr "Новый заказ"
+
+msgid "profile"
+msgstr "Профиль"
+
+msgid "status_new"
+msgstr "Новые"
+
+msgid "status_in_progress"
+msgstr "В работе"
+
+msgid "status_ready"
+msgstr "Готово"
+
+msgid "status_delivered"
+msgstr "Выдано"
+
+msgid "status_cancelled"
+msgstr "Отменено"
+
+msgid "recent_orders"
+msgstr "Последние заказы"
+
+msgid "order"
+msgstr "Заказ"
+
+msgid "view_all_orders"
+msgstr "Посмотреть все заказы"
+
+msgid "no_orders_yet"
+msgstr "Заказов пока нет"
+
+msgid "create_first_order"
+msgstr "Создайте свой первый заказ!"
+
+msgid "back_to_dashboard"
+msgstr "Вернуться в кабинет"
+
+msgid "fill_order_form"
+msgstr "Заполните форму для создания заказа"
+
+msgid "parts_category"
+msgstr "Категория запчастей"
+
+msgid "select_category"
+msgstr "Выберите категорию"
+
+msgid "select_parts_from_list"
+msgstr "Выберите детали из списка"
+
+msgid "select_category_first"
+msgstr "Сначала выберите категорию"
+
+msgid "or_add_manually"
+msgstr "Или добавьте вручную"
+
+msgid "add_part"
+msgstr "Добавить деталь"
+
+msgid "parts_type"
+msgstr "Тип запчастей"
+
+msgid "comment"
+msgstr "Комментарий"
+
+msgid "optional"
+msgstr "опционально"
+
+msgid "additional_info"
+msgstr "Дополнительная информация"
+
+msgid "create_order"
+msgstr "Создать заказ"
+
+msgid "part_name"
+msgstr "Название детали"
+
+msgid "error_loading_catalog"
+msgstr "Ошибка загрузки каталога"
+
+msgid "select_at_least_one_part"
+msgstr "Выберите хотя бы одну деталь!"
+
+msgid "successfully_created"
+msgstr "успешно создан"
+
+msgid "error"
+msgstr "Ошибка"
+
+msgid "submission_error"
+msgstr "Ошибка отправки"
+
+msgid "all_statuses"
+msgstr "Все статусы"
+
+msgid "search_by_plate"
+msgstr "Поиск по гос номеру"
+
+msgid "apply"
+msgstr "Применить"
+
+msgid "found"
+msgstr "Найдено"
+
+msgid "type"
+msgstr "Тип"
+
+msgid "created"
+msgstr "Создан"
+
+msgid "try_different_filters"
+msgstr "Попробуйте изменить фильтры или создайте новый заказ"
+
+msgid "my_profile"
+msgstr "Мой профиль"
+
+msgid "personal_info"
+msgstr "Личная информация"
+
+msgid "full_name"
+msgstr "Полное имя"
+
+msgid "telegram_id_hint"
+msgstr "Для получения уведомлений о готовности заказов"
+
+msgid "phone"
+msgstr "Телефон"
+
+msgid "save_changes"
+msgstr "Сохранить изменения"
+
+msgid "change_password"
+msgstr "Смена пароля"
+
+msgid "password_hint"
+msgstr "Пароль должен быть не менее 6 символов"
+
+msgid "current_password"
+msgstr "Текущий пароль"
+
+msgid "new_password"
+msgstr "Новый пароль"
+
+msgid "confirm_new_password"
+msgstr "Подтвердите новый пароль"
+
+msgid "profile_updated"
+msgstr "Профиль успешно обновлен"
+
+msgid "passwords_dont_match"
+msgstr "Пароли не совпадают"
+
+msgid "password_changed"
+msgstr "Пароль успешно изменен"
+
+msgid "telegram_notifications"
+msgstr "Telegram уведомления"
+
+msgid "telegram_id_not_set"
+msgstr "У вас не указан Telegram ID. Укажите его в"
+
+msgid "to_receive_notifications"
+msgstr "чтобы получать уведомления."
+
+msgid "order_ready"
+msgstr "Заказ готов"
+
+msgid "notify_when_ready"
+msgstr "Уведомление, когда ваш заказ готов к выдаче"
+
+msgid "order_in_progress"
+msgstr "Заказ в работе"
+
+msgid "notify_when_processing"
+msgstr "Уведомление, когда заказ взят в обработку"
+
+msgid "order_cancelled"
+msgstr "Заказ отменен"
+
+msgid "notify_when_cancelled"
+msgstr "Уведомление, если заказ отменен"
+
+msgid "save_settings"
+msgstr "Сохранить настройки"
+
+msgid "settings_saved"
+msgstr "Настройки успешно сохранены"
+
+# Admin panel translations
+msgid "admin_login"
+msgstr "Вход администратора"
+
+msgid "admin_panel"
+msgstr "Панель администратора"
+
+msgid "enter_admin_password"
+msgstr "Введите пароль для входа"
+
+msgid "manage_mechanics"
+msgstr "Управление механиками"
+
+msgid "add_mechanic"
+msgstr "Добавить механика"
+
+msgid "edit_mechanic"
+msgstr "Редактировать механика"
+
+msgid "mechanic_list"
+msgstr "Список механиков"
+
+msgid "total"
+msgstr "Всего"
+
+msgid "active_plural"
+msgstr "Активных"
+
+msgid "inactive_plural"
+msgstr "Неактивных"
+
+msgid "loading"
+msgstr "Загрузка..."
+
+msgid "no_mechanics_yet"
+msgstr "Механиков пока нет"
+
+msgid "mechanic_id"
+msgstr "ID"
+
+msgid "actions"
+msgstr "Действия"
+
+msgid "deactivate"
+msgstr "Деактивировать"
+
+msgid "activate"
+msgstr "Активировать"
+
+msgid "active"
+msgstr "Активен"
+
+msgid "inactive"
+msgstr "Неактивен"
+
+msgid "password_required_on_create"
+msgstr "Пароль обязателен при создании"
+
+msgid "min_6_chars"
+msgstr "Минимум 6 символов"
+
+msgid "leave_empty_to_keep"
+msgstr "При редактировании оставьте пустым, чтобы не менять."
+
+msgid "notify_on_order_ready"
+msgstr "Уведомлять при готовности заказа"
+
+msgid "mechanic_created"
+msgstr "Механик создан"
+
+msgid "mechanic_updated"
+msgstr "Механик обновлен"
+
+msgid "mechanic_activated"
+msgstr "Механик активирован"
+
+msgid "mechanic_deactivated"
+msgstr "Механик деактивирован"
+
+msgid "error_loading_data"
+msgstr "Ошибка загрузки данных"
+

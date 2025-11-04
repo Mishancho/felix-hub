@@ -2,8 +2,13 @@
 <html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - Форма заказа запчастей">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Felix Hub - Механик</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
     <style>
         * {
             margin: 0;
@@ -97,17 +102,28 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
+            border: 2px solid transparent;
         }
         
         .checkbox-item:hover {
             background: #e9ecef;
         }
         
+        .checkbox-item.checked {
+            background: #e7f1ff;
+            border-color: #667eea;
+        }
+        
         .checkbox-item input[type="checkbox"] {
             width: 20px;
             height: 20px;
+            min-width: 20px;
             margin-right: 10px;
             cursor: pointer;
+            flex-shrink: 0;
+            accent-color: #667eea;
+            -webkit-appearance: checkbox;
+            appearance: checkbox;
         }
         
         .checkbox-item label {
@@ -353,12 +369,12 @@
                 <label id="labelType">Тип запчастей</label>
                 <div class="radio-group">
                     <div class="radio-item">
-                        <input type="radio" id="typeAnalog" name="partType" value="analog" checked>
-                        <label for="typeAnalog" id="labelAnalog">💰 Аналог</label>
+                        <input type="radio" id="typeOriginal" name="partType" value="original" checked>
+                        <label for="typeOriginal" id="labelOriginal">� Оригинал</label>
                     </div>
                     <div class="radio-item">
-                        <input type="radio" id="typeOriginal" name="partType" value="original">
-                        <label for="typeOriginal" id="labelOriginal">🔧 Оригинал</label>
+                        <input type="radio" id="typeAnalog" name="partType" value="analog">
+                        <label for="typeAnalog" id="labelAnalog">� Аналог</label>
                     </div>
                 </div>
             </div>
@@ -469,7 +485,7 @@
         // Каталог запчастей
         const catalog = {{ catalog | tojson }};
         
-        // Выбранные детали
+        // Выбранные детали - сохраняем все выбранные из всех категорий
         let selectedParts = [];
         let customParts = [];
         
@@ -486,14 +502,32 @@
                 catalog[category].forEach(part => {
                     const div = document.createElement('div');
                     div.className = 'checkbox-item';
+                    
+                    // Проверяем, была ли эта деталь уже выбрана
+                    const isChecked = selectedParts.includes(part);
+                    if (isChecked) {
+                        div.classList.add('checked');
+                    }
+                    
+                    const safeId = 'part_' + part.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                    
                     div.innerHTML = `
-                        <input type="checkbox" id="part_${part}" value="${part}">
-                        <label for="part_${part}">${part}</label>
+                        <input type="checkbox" id="${safeId}" value="${part}" ${isChecked ? 'checked' : ''}>
+                        <label for="${safeId}">${part}</label>
                     `;
                     partsList.appendChild(div);
                     
                     // Обработчик изменения чекбокса
-                    div.querySelector('input').addEventListener('change', updateSelectedParts);
+                    const checkbox = div.querySelector('input');
+                    checkbox.addEventListener('change', function() {
+                        // Переключаем класс checked на родительском div
+                        if (this.checked) {
+                            div.classList.add('checked');
+                        } else {
+                            div.classList.remove('checked');
+                        }
+                        updateSelectedParts();
+                    });
                 });
             } else {
                 partsGroup.style.display = 'none';
@@ -505,8 +539,23 @@
         
         // Обновление списка выбранных деталей
         function updateSelectedParts() {
-            const checkboxes = document.querySelectorAll('#partsList input[type="checkbox"]:checked');
-            selectedParts = Array.from(checkboxes).map(cb => cb.value);
+            const checkboxes = document.querySelectorAll('#partsList input[type="checkbox"]');
+            
+            // Добавляем или удаляем детали из общего списка selectedParts
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    // Добавляем, если еще нет в списке
+                    if (!selectedParts.includes(cb.value)) {
+                        selectedParts.push(cb.value);
+                    }
+                } else {
+                    // Удаляем, если есть в списке
+                    const index = selectedParts.indexOf(cb.value);
+                    if (index > -1) {
+                        selectedParts.splice(index, 1);
+                    }
+                }
+            });
             
             const total = selectedParts.length + customParts.length;
             document.getElementById('partsCounter').textContent = t.partsCounter + total;
@@ -639,5 +688,6 @@
             document.getElementById('successMessage').classList.add('hidden');
         }
     </script>
+    <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>

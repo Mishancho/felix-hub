@@ -21,7 +21,8 @@ function switchTab(tab, event) {
 // Загрузка категорий
 async function loadCategories() {
     try {
-        const response = await fetch('/api/categories');
+        const lang = getCurrentLanguage ? getCurrentLanguage() : 'ru';
+        const response = await fetch(`/api/categories?lang=${lang}`);
         if (!response.ok) throw new Error('Ошибка загрузки категорий');
         
         allCategories = await response.json();
@@ -30,7 +31,8 @@ async function loadCategories() {
         updateCategoryFilters();
     } catch (error) {
         console.error(error);
-        showAlert('Ошибка загрузки категорий: ' + error.message, 'error');
+        const message = t ? t('error_loading_categories') : 'Ошибка загрузки категорий';
+        showAlert(message + ': ' + error.message, 'error');
     }
 }
 
@@ -39,11 +41,14 @@ function renderCategories() {
     const container = document.getElementById('categoriesContainer');
     
     if (allCategories.length === 0) {
+        const noCategories = t ? t('no_categories') : 'Категорий нет';
+        const noCategoriesDesc = t ? t('no_categories_desc') : 'Добавьте первую категорию или импортируйте каталог';
+        
         container.innerHTML = `
             <div class="empty-state">
                 <div style="font-size: 64px;">📁</div>
-                <h3>Категорий нет</h3>
-                <p>Добавьте первую категорию или импортируйте каталог</p>
+                <h3>${noCategories}</h3>
+                <p>${noCategoriesDesc}</p>
             </div>
         `;
         return;
@@ -53,34 +58,47 @@ function renderCategories() {
         <table>
             <thead>
                 <tr>
-                    <th style="width: 60px;">ID</th>
-                    <th>Название</th>
-                    <th style="width: 100px;">Запчастей</th>
-                    <th style="width: 100px;">Активных</th>
-                    <th style="width: 100px;">Порядок</th>
-                    <th style="width: 120px;">Статус</th>
-                    <th style="width: 300px;">Действия</th>
+                    <th style="width: 60px;">${t ? t('table_id') : 'ID'}</th>
+                    <th>${t ? t('table_name') : 'Название'}</th>
+                    <th style="width: 100px;">${t ? t('table_parts_count') : 'Запчастей'}</th>
+                    <th style="width: 100px;">${t ? t('table_active_count') : 'Активных'}</th>
+                    <th style="width: 100px;">${t ? t('table_sort_order') : 'Порядок'}</th>
+                    <th style="width: 120px;">${t ? t('table_status') : 'Статус'}</th>
+                    <th style="width: 300px;">${t ? t('table_actions') : 'Действия'}</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
     allCategories.forEach(cat => {
+        const activeText = t ? t('active') : 'Активна';
+        const inactiveText = t ? t('inactive') : 'Неактивна';
+        const editText = t ? t('edit') : 'Редактировать';
+        
+        // Формируем отображение с переводами
+        const mainName = cat.name_ru || cat.name || 'N/A';
+        const translations = [];
+        if (cat.name_en) translations.push(`EN: ${cat.name_en}`);
+        if (cat.name_he) translations.push(`HE: ${cat.name_he}`);
+        
         html += `
             <tr class="${!cat.is_active ? 'inactive' : ''}">
                 <td><strong>#${cat.id}</strong></td>
-                <td><strong>${cat.name}</strong></td>
+                <td>
+                    <strong>${mainName}</strong>
+                    ${translations.length > 0 ? `<br><small style="color: #7f8c8d;">${translations.join(' | ')}</small>` : ''}
+                </td>
                 <td>${cat.parts_count || 0}</td>
                 <td>${cat.active_parts_count || 0}</td>
                 <td>${cat.sort_order}</td>
                 <td>
                     <span class="status-badge ${cat.is_active ? 'status-active' : 'status-inactive'}">
-                        ${cat.is_active ? 'Активна' : 'Неактивна'}
+                        ${cat.is_active ? activeText : inactiveText}
                     </span>
                 </td>
                 <td>
                     <button class="btn btn-primary btn-sm" onclick="editCategory(${cat.id})">
-                        ✏️ Редактировать
+                        ✏️ ${editText}
                     </button>
                     <button class="btn btn-warning btn-sm" onclick="toggleCategoryActive(${cat.id})">
                         ${cat.is_active ? '🔒' : '🔓'}
@@ -102,14 +120,15 @@ async function loadParts() {
     try {
         const statusFilter = document.getElementById('statusFilter').value;
         const activeOnly = statusFilter === 'active' ? 'true' : 'false';
+        const lang = getCurrentLanguage ? getCurrentLanguage() : 'ru';
         
-        const response = await fetch(`/api/parts?active_only=${activeOnly}`);
+        const response = await fetch(`/api/parts?active_only=${activeOnly}&lang=${lang}`);
         if (!response.ok) throw new Error('Ошибка загрузки запчастей');
         
         allParts = await response.json();
         
         if (statusFilter === 'inactive') {
-            const allResponse = await fetch('/api/parts?active_only=false');
+            const allResponse = await fetch(`/api/parts?active_only=false&lang=${lang}`);
             const allData = await allResponse.json();
             allParts = allData.filter(p => !p.is_active);
         }
@@ -118,7 +137,8 @@ async function loadParts() {
         renderParts();
     } catch (error) {
         console.error(error);
-        showAlert('Ошибка загрузки запчастей: ' + error.message, 'error');
+        const message = t ? t('error_loading_parts') : 'Ошибка загрузки запчастей';
+        showAlert(message + ': ' + error.message, 'error');
     }
 }
 
@@ -142,11 +162,14 @@ function renderParts() {
     }
     
     if (filteredParts.length === 0) {
+        const noParts = t ? t('no_parts') : 'Запчасти не найдены';
+        const noPartsDesc = t ? t('no_parts_desc') : 'Попробуйте изменить фильтры';
+        
         container.innerHTML = `
             <div class="empty-state">
                 <div style="font-size: 64px;">📦</div>
-                <h3>Запчасти не найдены</h3>
-                <p>Попробуйте изменить фильтры</p>
+                <h3>${noParts}</h3>
+                <p>${noPartsDesc}</p>
             </div>
         `;
         return;
@@ -156,32 +179,45 @@ function renderParts() {
         <table>
             <thead>
                 <tr>
-                    <th style="width: 60px;">ID</th>
-                    <th>Название</th>
-                    <th style="width: 200px;">Категория</th>
-                    <th style="width: 100px;">Порядок</th>
-                    <th style="width: 120px;">Статус</th>
-                    <th style="width: 300px;">Действия</th>
+                    <th style="width: 60px;">${t ? t('table_id') : 'ID'}</th>
+                    <th>${t ? t('table_name') : 'Название'}</th>
+                    <th style="width: 200px;">${t ? t('table_category') : 'Категория'}</th>
+                    <th style="width: 100px;">${t ? t('table_sort_order') : 'Порядок'}</th>
+                    <th style="width: 120px;">${t ? t('table_status') : 'Статус'}</th>
+                    <th style="width: 300px;">${t ? t('table_actions') : 'Действия'}</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
     filteredParts.forEach(part => {
+        // Отображаем названия на всех языках
+        const displayName = part.name_ru || part.name || 'N/A';
+        const translations = [];
+        if (part.name_en) translations.push(`EN: ${part.name_en}`);
+        if (part.name_he) translations.push(`HE: ${part.name_he}`);
+        
+        const activeText = t ? t('active') : 'Активна';
+        const inactiveText = t ? t('inactive') : 'Неактивна';
+        const editText = t ? t('edit') : 'Редактировать';
+        
         html += `
             <tr class="${!part.is_active ? 'inactive' : ''}">
                 <td><strong>#${part.id}</strong></td>
-                <td>${part.name}</td>
+                <td>
+                    <strong>${displayName}</strong>
+                    ${translations.length > 0 ? `<br><small style="color: #7f8c8d;">${translations.join(' | ')}</small>` : ''}
+                </td>
                 <td>📁 ${part.category}</td>
                 <td>${part.sort_order}</td>
                 <td>
                     <span class="status-badge ${part.is_active ? 'status-active' : 'status-inactive'}">
-                        ${part.is_active ? 'Активна' : 'Неактивна'}
+                        ${part.is_active ? activeText : inactiveText}
                     </span>
                 </td>
                 <td>
                     <button class="btn btn-primary btn-sm" onclick="editPart(${part.id})">
-                        ✏️ Редактировать
+                        ✏️ ${editText}
                     </button>
                     <button class="btn btn-warning btn-sm" onclick="togglePartActive(${part.id})">
                         ${part.is_active ? '🔒' : '🔓'}
@@ -203,8 +239,13 @@ function updateCategoryFilters() {
     const categoryFilter = document.getElementById('categoryFilter');
     const partCategory = document.getElementById('partCategory');
     
-    const currentValue = categoryFilter.value;
-    categoryFilter.innerHTML = '<option value="all">Все категории</option>';
+    // Сохраняем текущие значения
+    const currentFilterValue = categoryFilter.value;
+    const currentPartCategoryValue = partCategory.value;
+    
+    // Обновляем фильтр категорий
+    const allCategoriesText = t ? t('all_categories') : 'Все категории';
+    categoryFilter.innerHTML = `<option value="all">${allCategoriesText}</option>`;
     
     allCategories
         .filter(c => c.is_active)
@@ -212,17 +253,20 @@ function updateCategoryFilters() {
             const option = document.createElement('option');
             option.value = cat.name;
             option.textContent = cat.name;
-            if (cat.name === currentValue) option.selected = true;
+            if (cat.name === currentFilterValue) option.selected = true;
             categoryFilter.appendChild(option);
         });
     
-    partCategory.innerHTML = '<option value="">Выберите категорию</option>';
+    // Обновляем селект категорий в модальном окне, сохраняя выбранное значение
+    const chooseCategoryText = t ? t('choose_category') : 'Выберите категорию';
+    partCategory.innerHTML = `<option value="">${chooseCategoryText}</option>`;
     allCategories
         .filter(c => c.is_active)
         .forEach(cat => {
             const option = document.createElement('option');
             option.value = cat.name;
             option.textContent = cat.name;
+            if (cat.name === currentPartCategoryValue) option.selected = true;
             partCategory.appendChild(option);
         });
 }
@@ -236,7 +280,8 @@ function updateStats() {
 
 // === КАТЕГОРИИ ===
 function openAddCategoryModal() {
-    document.getElementById('categoryModalTitle').textContent = 'Добавить категорию';
+    const title = t ? t('add_category_title') : 'Добавить категорию';
+    document.getElementById('categoryModalTitle').textContent = title;
     document.getElementById('categoryForm').reset();
     document.getElementById('categoryId').value = '';
     document.getElementById('categoryIsActive').checked = true;
@@ -248,15 +293,19 @@ async function editCategory(id) {
         const response = await fetch(`/api/admin/categories/${id}`);
         const category = await response.json();
         
-        document.getElementById('categoryModalTitle').textContent = 'Редактировать категорию';
+        const title = t ? t('edit_category_title') : 'Редактировать категорию';
+        document.getElementById('categoryModalTitle').textContent = title;
         document.getElementById('categoryId').value = category.id;
-        document.getElementById('categoryName').value = category.name;
+        document.getElementById('categoryName').value = category.name_ru || category.name || '';
+        document.getElementById('categoryNameEn').value = category.name_en || '';
+        document.getElementById('categoryNameHe').value = category.name_he || '';
         document.getElementById('categorySortOrder').value = category.sort_order;
         document.getElementById('categoryIsActive').checked = category.is_active;
         
         document.getElementById('categoryModal').classList.add('active');
     } catch (error) {
-        showAlert('Ошибка загрузки категории', 'error');
+        const message = t ? t('error_loading_category') : 'Ошибка загрузки категории';
+        showAlert(message, 'error');
     }
 }
 
@@ -266,6 +315,9 @@ async function saveCategory(event) {
     const id = document.getElementById('categoryId').value;
     const data = {
         name: document.getElementById('categoryName').value,
+        name_ru: document.getElementById('categoryName').value,
+        name_en: document.getElementById('categoryNameEn').value,
+        name_he: document.getElementById('categoryNameHe').value,
         sort_order: parseInt(document.getElementById('categorySortOrder').value) || 0,
         is_active: document.getElementById('categoryIsActive').checked
     };
@@ -283,12 +335,16 @@ async function saveCategory(event) {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Ошибка сохранения');
         
-        showAlert(id ? 'Категория обновлена' : 'Категория добавлена', 'success');
+        const successMessage = id 
+            ? (t ? t('category_updated') : 'Категория обновлена')
+            : (t ? t('category_added') : 'Категория добавлена');
+        showAlert(successMessage, 'success');
         closeCategoryModal();
         loadCategories();
         loadParts();
     } catch (error) {
-        showAlert('Ошибка: ' + error.message, 'error');
+        const errorMessage = t ? t('error') : 'Ошибка';
+        showAlert(errorMessage + ': ' + error.message, 'error');
     }
 }
 
@@ -299,15 +355,18 @@ async function toggleCategoryActive(id) {
         });
         if (!response.ok) throw new Error('Ошибка');
         
-        showAlert('Статус категории изменен', 'success');
+        const message = t ? t('category_status_changed') : 'Статус категории изменен';
+        showAlert(message, 'success');
         loadCategories();
     } catch (error) {
-        showAlert('Ошибка: ' + error.message, 'error');
+        const errorMessage = t ? t('error') : 'Ошибка';
+        showAlert(errorMessage + ': ' + error.message, 'error');
     }
 }
 
 async function deleteCategory(id) {
-    if (!confirm('Удалить категорию? Это возможно только если в ней нет запчастей.')) {
+    const confirmMessage = t ? t('confirm_delete_category') : 'Удалить категорию? Это возможно только если в ней нет запчастей.';
+    if (!confirm(confirmMessage)) {
         return;
     }
     
@@ -319,10 +378,12 @@ async function deleteCategory(id) {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Ошибка удаления');
         
-        showAlert('Категория удалена', 'success');
+        const successMessage = t ? t('category_deleted') : 'Категория удалена';
+        showAlert(successMessage, 'success');
         loadCategories();
     } catch (error) {
-        showAlert('Ошибка: ' + error.message, 'error');
+        const errorMessage = t ? t('error') : 'Ошибка';
+        showAlert(errorMessage + ': ' + error.message, 'error');
     }
 }
 
@@ -332,7 +393,8 @@ function closeCategoryModal() {
 
 // === ЗАПЧАСТИ ===
 function openAddPartModal() {
-    document.getElementById('partModalTitle').textContent = 'Добавить запчасть';
+    const title = t ? t('add_part_title') : 'Добавить запчасть';
+    document.getElementById('partModalTitle').textContent = title;
     document.getElementById('partForm').reset();
     document.getElementById('partId').value = '';
     document.getElementById('partIsActive').checked = true;
@@ -344,16 +406,27 @@ async function editPart(id) {
         const response = await fetch(`/api/admin/parts/${id}`);
         const part = await response.json();
         
-        document.getElementById('partModalTitle').textContent = 'Редактировать запчасть';
+        const title = t ? t('edit_part_title') : 'Редактировать запчасть';
+        document.getElementById('partModalTitle').textContent = title;
         document.getElementById('partId').value = part.id;
-        document.getElementById('partName').value = part.name;
+        
+        // Заполняем поля для всех языков
+        document.getElementById('partNameRu').value = part.name_ru || part.name || '';
+        document.getElementById('partNameEn').value = part.name_en || '';
+        document.getElementById('partNameHe').value = part.name_he || '';
+        
+        document.getElementById('partDescRu').value = part.description_ru || '';
+        document.getElementById('partDescEn').value = part.description_en || '';
+        document.getElementById('partDescHe').value = part.description_he || '';
+        
         document.getElementById('partCategory').value = part.category;
         document.getElementById('partSortOrder').value = part.sort_order;
         document.getElementById('partIsActive').checked = part.is_active;
         
         document.getElementById('partModal').classList.add('active');
     } catch (error) {
-        showAlert('Ошибка загрузки запчасти', 'error');
+        const message = t ? t('error_loading_part') : 'Ошибка загрузки запчасти';
+        showAlert(message, 'error');
     }
 }
 
@@ -362,7 +435,12 @@ async function savePart(event) {
     
     const id = document.getElementById('partId').value;
     const data = {
-        name: document.getElementById('partName').value,
+        name_ru: document.getElementById('partNameRu').value,
+        name_en: document.getElementById('partNameEn').value,
+        name_he: document.getElementById('partNameHe').value,
+        description_ru: document.getElementById('partDescRu').value,
+        description_en: document.getElementById('partDescEn').value,
+        description_he: document.getElementById('partDescHe').value,
         category: document.getElementById('partCategory').value,
         sort_order: parseInt(document.getElementById('partSortOrder').value) || 0,
         is_active: document.getElementById('partIsActive').checked
@@ -381,11 +459,15 @@ async function savePart(event) {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Ошибка сохранения');
         
-        showAlert(id ? 'Запчасть обновлена' : 'Запчасть добавлена', 'success');
+        const successMessage = id 
+            ? (t ? t('part_updated') : 'Запчасть обновлена')
+            : (t ? t('part_added') : 'Запчасть добавлена');
+        showAlert(successMessage, 'success');
         closePartModal();
         loadParts();
     } catch (error) {
-        showAlert('Ошибка: ' + error.message, 'error');
+        const errorMessage = t ? t('error') : 'Ошибка';
+        showAlert(errorMessage + ': ' + error.message, 'error');
     }
 }
 
@@ -396,15 +478,18 @@ async function togglePartActive(id) {
         });
         if (!response.ok) throw new Error('Ошибка');
         
-        showAlert('Статус запчасти изменен', 'success');
+        const message = t ? t('part_status_changed') : 'Статус запчасти изменен';
+        showAlert(message, 'success');
         loadParts();
     } catch (error) {
-        showAlert('Ошибка: ' + error.message, 'error');
+        const errorMessage = t ? t('error') : 'Ошибка';
+        showAlert(errorMessage + ': ' + error.message, 'error');
     }
 }
 
 async function deletePart(id) {
-    if (!confirm('Удалить запчасть?')) {
+    const confirmMessage = t ? t('confirm_delete_part') : 'Удалить запчасть?';
+    if (!confirm(confirmMessage)) {
         return;
     }
     
@@ -414,10 +499,12 @@ async function deletePart(id) {
         });
         if (!response.ok) throw new Error('Ошибка удаления');
         
-        showAlert('Запчасть удалена', 'success');
+        const successMessage = t ? t('part_deleted') : 'Запчасть удалена';
+        showAlert(successMessage, 'success');
         loadParts();
     } catch (error) {
-        showAlert('Ошибка: ' + error.message, 'error');
+        const errorMessage = t ? t('error') : 'Ошибка';
+        showAlert(errorMessage + ': ' + error.message, 'error');
     }
 }
 
@@ -427,7 +514,8 @@ function closePartModal() {
 
 // === ИМПОРТ ===
 async function importDefaultCatalog() {
-    if (!confirm('Импортировать дефолтный каталог? Существующие записи не будут затронуты.')) {
+    const confirmMessage = t ? t('confirm_import_catalog') : 'Импортировать дефолтный каталог? Существующие записи не будут затронуты.';
+    if (!confirm(confirmMessage)) {
         return;
     }
     
@@ -443,7 +531,8 @@ async function importDefaultCatalog() {
         loadCategories();
         loadParts();
     } catch (error) {
-        showAlert('Ошибка: ' + error.message, 'error');
+        const errorMessage = t ? t('error') : 'Ошибка';
+        showAlert(errorMessage + ': ' + error.message, 'error');
     }
 }
 

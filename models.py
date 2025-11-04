@@ -103,12 +103,18 @@ class Mechanic(UserMixin, db.Model):
 
 class Category(db.Model):
     """
-    Модель категории запчастей
+    Модель категории запчастей с многоязычной поддержкой
     """
     __tablename__ = 'categories'
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    
+    # Названия на трех языках
+    name_en = db.Column(db.String(120))
+    name_he = db.Column(db.String(120))
+    name_ru = db.Column(db.String(120))
+    
     is_active = db.Column(db.Boolean, default=True, index=True)
     sort_order = db.Column(db.Integer, default=0)
     
@@ -116,15 +122,30 @@ class Category(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    def to_dict(self):
+    def get_name(self, lang='ru'):
+        """Получить название на указанном языке"""
+        if lang == 'en' and self.name_en:
+            return self.name_en
+        elif lang == 'he' and self.name_he:
+            return self.name_he
+        elif lang == 'ru' and self.name_ru:
+            return self.name_ru
+        # Fallback на основное имя
+        return self.name
+    
+    def to_dict(self, lang=None):
         """Преобразовать в словарь для API"""
         # Подсчитываем количество запчастей в категории
         parts_count = Part.query.filter_by(category=self.name).count()
         active_parts_count = Part.query.filter_by(category=self.name, is_active=True).count()
         
-        return {
+        # Базовые данные со всеми языками
+        data = {
             'id': self.id,
             'name': self.name,
+            'name_en': self.name_en,
+            'name_he': self.name_he,
+            'name_ru': self.name_ru,
             'is_active': self.is_active,
             'sort_order': self.sort_order,
             'parts_count': parts_count,
@@ -132,6 +153,12 @@ class Category(db.Model):
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S')
         }
+        
+        # Если указан язык, добавляем локализованное имя
+        if lang:
+            data['name'] = self.get_name(lang)
+        
+        return data
     
     def __repr__(self):
         return f'<Category {self.name}>'
@@ -139,12 +166,25 @@ class Category(db.Model):
 
 class Part(db.Model):
     """
-    Модель запчасти в справочнике
+    Модель запчасти в справочнике с многоязычной поддержкой
     """
     __tablename__ = 'parts'
     
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(250), nullable=False)
+    
+    # Название на трех языках
+    name_en = db.Column(db.String(250))
+    name_he = db.Column(db.String(250))
+    name_ru = db.Column(db.String(250), nullable=False)
+    
+    # Описание на трех языках
+    description_en = db.Column(db.Text)
+    description_he = db.Column(db.Text)
+    description_ru = db.Column(db.Text)
+    
+    # Старое поле для обратной совместимости
+    name = db.Column(db.String(250))
+    
     category = db.Column(db.String(120), nullable=False, index=True)
     is_active = db.Column(db.Boolean, default=True, index=True)
     sort_order = db.Column(db.Integer, default=0)
@@ -153,20 +193,61 @@ class Part(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    def to_dict(self):
+    def get_name(self, lang='ru'):
+        """Получить название на указанном языке"""
+        if lang == 'en' and self.name_en:
+            return self.name_en
+        elif lang == 'he' and self.name_he:
+            return self.name_he
+        elif lang == 'ru' and self.name_ru:
+            return self.name_ru
+        # Fallback на русский
+        return self.name_ru or self.name or 'N/A'
+    
+    def get_description(self, lang='ru'):
+        """Получить описание на указанном языке"""
+        if lang == 'en' and self.description_en:
+            return self.description_en
+        elif lang == 'he' and self.description_he:
+            return self.description_he
+        elif lang == 'ru' and self.description_ru:
+            return self.description_ru
+        # Fallback на русский
+        return self.description_ru or ''
+    
+    def to_dict(self, lang=None):
         """Преобразовать в словарь для API"""
-        return {
-            'id': self.id,
-            'name': self.name,
-            'category': self.category,
-            'is_active': self.is_active,
-            'sort_order': self.sort_order,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S')
-        }
+        if lang:
+            # Возвращаем данные на конкретном языке
+            return {
+                'id': self.id,
+                'name': self.get_name(lang),
+                'description': self.get_description(lang),
+                'category': self.category,
+                'is_active': self.is_active,
+                'sort_order': self.sort_order,
+                'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        else:
+            # Возвращаем все языки (для админа)
+            return {
+                'id': self.id,
+                'name_en': self.name_en,
+                'name_he': self.name_he,
+                'name_ru': self.name_ru,
+                'description_en': self.description_en,
+                'description_he': self.description_he,
+                'description_ru': self.description_ru,
+                'category': self.category,
+                'is_active': self.is_active,
+                'sort_order': self.sort_order,
+                'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            }
     
     def __repr__(self):
-        return f'<Part {self.name}>'
+        return f'<Part {self.name_ru or self.name}>'
 
 
 class Order(db.Model):
@@ -200,13 +281,21 @@ class Order(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    def to_dict(self, include_mechanic=False):
+    def to_dict(self, include_mechanic=False, lang=None):
         """Преобразовать в словарь для API"""
+        category_name = self.category
+        
+        # Если указан язык, пытаемся найти перевод категории
+        if lang:
+            category_obj = Category.query.filter_by(name=self.category).first()
+            if category_obj:
+                category_name = category_obj.get_name(lang)
+        
         data = {
             'id': self.id,
             'mechanic_name': self.mechanic_name,
             'telegram_id': self.telegram_id,
-            'category': self.category,
+            'category': category_name,
             'plate_number': self.plate_number,
             'selected_parts': self.selected_parts or [],
             'is_original': self.is_original,

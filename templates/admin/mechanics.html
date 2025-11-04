@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ g.locale or 'ru' }}" dir="{{ 'rtl' if g.locale == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление механиками - Felix Hub Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - Управление механиками">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{{ _('manage_mechanics') }} - Felix Hub Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/language-switcher.css') }}">
+    <script src="{{ url_for('static', filename='js/language.js') }}"></script>
     <style>
         * {
             margin: 0;
@@ -14,12 +21,51 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-header h1 {
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn-white {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            padding: 30px 20px;
         }
 
         .header {
@@ -28,9 +74,7 @@
             border-radius: 15px;
             margin-bottom: 30px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: none;
         }
 
         .header h1 {
@@ -292,29 +336,55 @@
             color: #666;
             margin-top: 4px;
         }
+        
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.3em;
+            }
+            
+            .header-actions {
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1>👥 Управление механиками</h1>
-                <p style="color: #999; margin-top: 5px;">Admin Panel</p>
-            </div>
-            <div>
-                <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">Выйти</a>
+    <!-- Language Switcher -->
+    <div id="languageSwitcher" class="language-switcher">
+        <select onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)" class="lang-select">
+            <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
+            <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
+            <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
+        </select>
+    </div>
+    
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>👥 {{ _('manage_mechanics') if _('manage_mechanics') != 'manage_mechanics' else 'Управление механиками' }}</h1>
+            <div class="header-actions">
+                <a href="{{ url_for('admin') }}" class="btn btn-white">← {{ _('home') if _('home') != 'home' else 'Главная' }}</a>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-white">{{ _('logout') if _('logout') != 'logout' else 'Выход' }}</a>
             </div>
         </div>
+    </div>
+
+    <div class="container">
 
         <div class="nav">
-            <a href="{{ url_for('admin') }}">Заказы</a>
-            <a href="{{ url_for('admin_mechanics') }}" class="active">Механики</a>
+            <a href="{{ url_for('admin') }}">{{ _('orders') }}</a>
+            <a href="{{ url_for('admin_parts') }}">{{ _('parts.title') }}</a>
+            <a href="{{ url_for('admin_mechanics') }}" class="active">{{ _('manage_mechanics') }}</a>
         </div>
 
         <div class="card">
             <div class="card-header">
-                <h2>Список механиков</h2>
-                <button class="btn btn-primary" onclick="openCreateModal()">+ Добавить механика</button>
+                <h2>{{ _('mechanic_list') }}</h2>
+                <button class="btn btn-primary" onclick="openCreateModal()">+ {{ _('add_mechanic') }}</button>
             </div>
 
             <div id="alertContainer"></div>
@@ -324,20 +394,20 @@
             <table id="mechanicsTable">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Имя</th>
+                        <th>{{ _('mechanic_id') }}</th>
+                        <th>{{ _('username') }}</th>
+                        <th>{{ _('full_name') }}</th>
                         <th>Telegram ID</th>
-                        <th>Телефон</th>
-                        <th>Заказов</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
+                        <th>{{ _('phone') }}</th>
+                        <th>{{ _('orders') }}</th>
+                        <th>{{ _('status') }}</th>
+                        <th>{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="mechanicsBody">
                     <tr>
                         <td colspan="8" style="text-align: center; padding: 40px; color: #999;">
-                            Загрузка...
+                            {{ _('loading') }}
                         </td>
                     </tr>
                 </tbody>
@@ -349,7 +419,7 @@
     <div id="mechanicModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">Добавить механика</h2>
+                <h2 id="modalTitle">{{ _('add_mechanic') }}</h2>
                 <button class="close-modal" onclick="closeModal()">×</button>
             </div>
 
@@ -357,19 +427,19 @@
                 <input type="hidden" id="mechanicId">
 
                 <div class="form-group">
-                    <label for="username">Username *</label>
+                    <label for="username">{{ _('username') }} *</label>
                     <input type="text" id="username" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="full_name">Полное имя *</label>
+                    <label for="full_name">{{ _('full_name') }} *</label>
                     <input type="text" id="full_name" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="password">Пароль <span id="passwordLabel">*</span></label>
+                    <label for="password">{{ _('password') }} <span id="passwordLabel">*</span></label>
                     <input type="password" id="password">
-                    <small style="color: #666;">Минимум 6 символов. При редактировании оставьте пустым, чтобы не менять.</small>
+                    <small style="color: #666;">{{ _('min_6_chars') }}. {{ _('leave_empty_to_keep') }}</small>
                 </div>
 
                 <div class="form-group">
@@ -378,7 +448,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="phone">Телефон</label>
+                    <label for="phone">{{ _('phone') }}</label>
                     <input type="text" id="phone">
                 </div>
 
@@ -390,20 +460,20 @@
                 <div class="form-group">
                     <div class="checkbox-group">
                         <input type="checkbox" id="is_active" checked>
-                        <label for="is_active">Активен</label>
+                        <label for="is_active">{{ _('active') }}</label>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="checkbox-group">
                         <input type="checkbox" id="notify_on_ready" checked>
-                        <label for="notify_on_ready">Уведомлять при готовности заказа</label>
+                        <label for="notify_on_ready">{{ _('notify_on_order_ready') }}</label>
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Сохранить</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">{{ _('btn.save') }}</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">{{ _('btn.cancel') }}</button>
                 </div>
             </form>
         </div>
@@ -421,7 +491,7 @@
                 renderMechanics();
                 renderStats();
             } catch (error) {
-                console.error('Ошибка загрузки:', error);
+                console.error(t('error_loading_data') + ':', error);
             }
         }
 
@@ -433,7 +503,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" style="text-align: center; padding: 40px; color: #999;">
-                            Механиков пока нет
+                            ${t('no_mechanics_yet')}
                         </td>
                     </tr>
                 `;
@@ -450,17 +520,17 @@
                     <td>${m.stats ? m.stats.total : 0}</td>
                     <td>
                         <span class="status-badge status-${m.is_active ? 'active' : 'inactive'}">
-                            ${m.is_active ? 'Активен' : 'Неактивен'}
+                            ${m.is_active ? t('active') : t('inactive')}
                         </span>
                     </td>
                     <td>
                         <div class="actions">
                             <button class="btn btn-primary btn-small" onclick="editMechanic(${m.id})">
-                                Редактировать
+                                ${t('btn.edit')}
                             </button>
                             <button class="btn ${m.is_active ? 'btn-danger' : 'btn-success'} btn-small" 
                                     onclick="toggleActive(${m.id}, ${m.is_active})">
-                                ${m.is_active ? 'Деактивировать' : 'Активировать'}
+                                ${m.is_active ? t('deactivate') : t('activate')}
                             </button>
                         </div>
                     </td>
@@ -477,15 +547,15 @@
             document.getElementById('statsContainer').innerHTML = `
                 <div class="stat-item">
                     <div class="stat-number">${total}</div>
-                    <div class="stat-label">Всего</div>
+                    <div class="stat-label">${t('total')}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number">${active}</div>
-                    <div class="stat-label">Активных</div>
+                    <div class="stat-label">${t('active_plural')}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number">${inactive}</div>
-                    <div class="stat-label">Неактивных</div>
+                    <div class="stat-label">${t('inactive_plural')}</div>
                 </div>
             `;
         }
@@ -493,7 +563,7 @@
         // Открыть модалку создания
         function openCreateModal() {
             isEditMode = false;
-            document.getElementById('modalTitle').textContent = 'Добавить механика';
+            document.getElementById('modalTitle').textContent = t('add_mechanic');
             document.getElementById('mechanicForm').reset();
             document.getElementById('mechanicId').value = '';
             document.getElementById('password').required = true;
@@ -508,7 +578,7 @@
                 const mechanic = await response.json();
 
                 isEditMode = true;
-                document.getElementById('modalTitle').textContent = 'Редактировать механика';
+                document.getElementById('modalTitle').textContent = t('edit_mechanic');
                 document.getElementById('mechanicId').value = mechanic.id;
                 document.getElementById('username').value = mechanic.username;
                 document.getElementById('full_name').value = mechanic.full_name;
@@ -523,7 +593,7 @@
 
                 document.getElementById('mechanicModal').classList.add('active');
             } catch (error) {
-                showAlert('Ошибка загрузки данных', 'error');
+                showAlert(t('error_loading_data'), 'error');
             }
         }
 
@@ -562,7 +632,7 @@
                     });
                 } else {
                     if (!password) {
-                        showAlert('Пароль обязателен при создании', 'error');
+                        showAlert(t('password_required_on_create'), 'error');
                         return;
                     }
                     response = await fetch('/api/admin/mechanics', {
@@ -575,14 +645,14 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showAlert(isEditMode ? 'Механик обновлен' : 'Механик создан', 'success');
+                    showAlert(isEditMode ? t('mechanic_updated') : t('mechanic_created'), 'success');
                     closeModal();
                     loadMechanics();
                 } else {
                     showAlert(result.error, 'error');
                 }
             } catch (error) {
-                showAlert('Ошибка: ' + error.message, 'error');
+                showAlert(t('error') + ': ' + error.message, 'error');
             }
         });
 
@@ -596,13 +666,13 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showAlert(result.is_active ? 'Механик активирован' : 'Механик деактивирован', 'success');
+                    showAlert(result.is_active ? t('mechanic_activated') : t('mechanic_deactivated'), 'success');
                     loadMechanics();
                 } else {
                     showAlert(result.error, 'error');
                 }
             } catch (error) {
-                showAlert('Ошибка: ' + error.message, 'error');
+                showAlert(t('error') + ': ' + error.message, 'error');
             }
         }
 
@@ -623,5 +693,6 @@
         // Инициализация
         loadMechanics();
     </script>
+    <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>

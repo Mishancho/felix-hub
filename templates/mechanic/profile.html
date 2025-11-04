@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ g.locale or 'ru' }}" dir="{{ 'rtl' if g.locale == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Профиль - Felix Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - Профиль механика">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{{ _('profile') }} - Felix Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/language-switcher.css') }}">
     <style>
         * {
             margin: 0;
@@ -14,12 +20,64 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-header h1 {
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        
+        .btn-logout {
+            background: white;
+            color: #667eea;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
+            padding: 30px 20px;
         }
 
         .header {
@@ -28,6 +86,7 @@
             border-radius: 15px;
             margin-bottom: 30px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: none;
         }
 
         .header h1 {
@@ -158,30 +217,60 @@
             font-size: 14px;
             line-height: 1.5;
         }
+        
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.3em;
+            }
+            
+            .header-actions {
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>👤 Мой профиль</h1>
+    <!-- Language Switcher -->
+    <div id="languageSwitcher" class="language-switcher">
+        <select onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)" class="lang-select">
+            <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
+            <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
+            <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
+        </select>
+    </div>
+    
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>👤 {{ _('my_profile') if _('my_profile') != 'my_profile' else 'Мой профиль' }} - {{ current_user.full_name }}</h1>
+            <div class="header-actions">
+                <a href="{{ url_for('mechanic_logout') }}" class="btn btn-logout">{{ _('logout') }}</a>
+            </div>
         </div>
+    </div>
+    
+    <div class="container">
 
         <div class="nav">
-            <a href="{{ url_for('mechanic_dashboard') }}">Главная</a>
-            <a href="{{ url_for('mechanic_orders') }}">Мои заказы</a>
-            <a href="{{ url_for('mechanic_new_order') }}">Новый заказ</a>
-            <a href="{{ url_for('mechanic_profile') }}" class="active">Профиль</a>
-            <a href="{{ url_for('mechanic_settings') }}">Настройки</a>
+            <a href="{{ url_for('mechanic_dashboard') }}">{{ _('home') }}</a>
+            <a href="{{ url_for('mechanic_orders') }}">{{ _('my_orders') }}</a>
+            <a href="{{ url_for('mechanic_new_order') }}">{{ _('new_order') }}</a>
+            <a href="{{ url_for('mechanic_profile') }}" class="active">{{ _('profile') }}</a>
+            <a href="{{ url_for('mechanic_settings') }}">{{ _('settings') }}</a>
         </div>
 
         <div class="card">
-            <h2>Личная информация</h2>
+            <h2>{{ _('personal_info') }}</h2>
             
             <div id="profileAlert"></div>
 
             <form id="profileForm">
                 <div class="form-group">
-                    <label for="username">Имя пользователя</label>
+                    <label for="username">{{ _('username') }}</label>
                     <input type="text" 
                            id="username" 
                            value="{{ current_user.username }}" 
@@ -189,7 +278,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="full_name">Полное имя *</label>
+                    <label for="full_name">{{ _('full_name') }} *</label>
                     <input type="text" 
                            id="full_name" 
                            name="full_name"
@@ -204,11 +293,11 @@
                            name="telegram_id"
                            value="{{ current_user.telegram_id or '' }}"
                            placeholder="1234567890">
-                    <small style="color: #666; font-size: 13px;">Для получения уведомлений о готовности заказов</small>
+                    <small style="color: #666; font-size: 13px;">{{ _('telegram_id_hint') }}</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="phone">Телефон</label>
+                    <label for="phone">{{ _('phone') }}</label>
                     <input type="text" 
                            id="phone" 
                            name="phone"
@@ -225,22 +314,22 @@
                            placeholder="email@example.com">
                 </div>
 
-                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                <button type="submit" class="btn btn-primary">{{ _('save_changes') }}</button>
             </form>
         </div>
 
         <div class="card">
-            <h2>Смена пароля</h2>
+            <h2>{{ _('change_password') }}</h2>
             
             <div id="passwordAlert"></div>
 
             <div class="info-box">
-                <p>💡 Пароль должен быть не менее 6 символов</p>
+                <p>💡 {{ _('password_hint') }}</p>
             </div>
 
             <form id="passwordForm">
                 <div class="form-group">
-                    <label for="old_password">Текущий пароль *</label>
+                    <label for="old_password">{{ _('current_password') }} *</label>
                     <input type="password" 
                            id="old_password" 
                            name="old_password"
@@ -248,7 +337,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="new_password">Новый пароль *</label>
+                    <label for="new_password">{{ _('new_password') }} *</label>
                     <input type="password" 
                            id="new_password" 
                            name="new_password"
@@ -257,7 +346,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="confirm_password">Подтвердите новый пароль *</label>
+                    <label for="confirm_password">{{ _('confirm_new_password') }} *</label>
                     <input type="password" 
                            id="confirm_password" 
                            name="confirm_password"
@@ -265,7 +354,7 @@
                            minlength="6">
                 </div>
 
-                <button type="submit" class="btn btn-primary">Изменить пароль</button>
+                <button type="submit" class="btn btn-primary">{{ _('change_password') }}</button>
             </form>
         </div>
     </div>
@@ -297,20 +386,20 @@
                 if (response.ok) {
                     alertContainer.innerHTML = `
                         <div class="alert alert-success">
-                            ✅ Профиль успешно обновлен!
+                            ✅ {{ _('profile_updated') }}!
                         </div>
                     `;
                 } else {
                     alertContainer.innerHTML = `
                         <div class="alert alert-error">
-                            ❌ Ошибка: ${result.error}
+                            ❌ {{ _('error') }}: ${result.error}
                         </div>
                     `;
                 }
             } catch (error) {
                 alertContainer.innerHTML = `
                     <div class="alert alert-error">
-                        ❌ Ошибка: ${error.message}
+                        ❌ {{ _('error') }}: ${error.message}
                     </div>
                 `;
             }
@@ -327,7 +416,7 @@
             if (newPassword !== confirmPassword) {
                 alertContainer.innerHTML = `
                     <div class="alert alert-error">
-                        ❌ Пароли не совпадают!
+                        ❌ {{ _('passwords_dont_match') }}!
                     </div>
                 `;
                 return;
@@ -352,25 +441,26 @@
                 if (response.ok) {
                     alertContainer.innerHTML = `
                         <div class="alert alert-success">
-                            ✅ Пароль успешно изменен!
+                            ✅ {{ _('password_changed') }}!
                         </div>
                     `;
                     document.getElementById('passwordForm').reset();
                 } else {
                     alertContainer.innerHTML = `
                         <div class="alert alert-error">
-                            ❌ Ошибка: ${result.error}
+                            ❌ {{ _('error') }}: ${result.error}
                         </div>
                     `;
                 }
             } catch (error) {
                 alertContainer.innerHTML = `
                     <div class="alert alert-error">
-                        ❌ Ошибка: ${error.message}
+                        ❌ {{ _('error') }}: ${error.message}
                     </div>
                 `;
             }
         });
     </script>
+    <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>

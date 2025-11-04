@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ g.locale or 'ru' }}" dir="{{ 'rtl' if g.locale == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Настройки - Felix Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - Настройки">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{{ _('settings') }} - Felix Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/language-switcher.css') }}">
     <style>
         * {
             margin: 0;
@@ -14,12 +20,64 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-header h1 {
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        
+        .btn-logout {
+            background: white;
+            color: #667eea;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
+            padding: 30px 20px;
         }
 
         .header {
@@ -28,6 +86,7 @@
             border-radius: 15px;
             margin-bottom: 30px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: none;
         }
 
         .header h1 {
@@ -199,30 +258,60 @@
         .btn-primary:hover {
             background: #5568d3;
         }
+        
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.3em;
+            }
+            
+            .header-actions {
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>⚙️ Настройки</h1>
+    <!-- Language Switcher -->
+    <div id="languageSwitcher" class="language-switcher">
+        <select onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)" class="lang-select">
+            <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
+            <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
+            <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
+        </select>
+    </div>
+    
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>⚙️ {{ _('settings') if _('settings') != 'settings' else 'Настройки' }} - {{ current_user.full_name }}</h1>
+            <div class="header-actions">
+                <a href="{{ url_for('mechanic_logout') }}" class="btn btn-logout">{{ _('logout') }}</a>
+            </div>
         </div>
+    </div>
+    
+    <div class="container">
 
         <div class="nav">
-            <a href="{{ url_for('mechanic_dashboard') }}">Главная</a>
-            <a href="{{ url_for('mechanic_orders') }}">Мои заказы</a>
-            <a href="{{ url_for('mechanic_new_order') }}">Новый заказ</a>
-            <a href="{{ url_for('mechanic_profile') }}">Профиль</a>
-            <a href="{{ url_for('mechanic_settings') }}" class="active">Настройки</a>
+            <a href="{{ url_for('mechanic_dashboard') }}">{{ _('home') }}</a>
+            <a href="{{ url_for('mechanic_orders') }}">{{ _('my_orders') }}</a>
+            <a href="{{ url_for('mechanic_new_order') }}">{{ _('new_order') }}</a>
+            <a href="{{ url_for('mechanic_profile') }}">{{ _('profile') }}</a>
+            <a href="{{ url_for('mechanic_settings') }}" class="active">{{ _('settings') }}</a>
         </div>
 
         <div class="card">
-            <h2>📱 Telegram уведомления</h2>
+            <h2>📱 {{ _('telegram_notifications') }}</h2>
             
             <div id="settingsAlert"></div>
 
             {% if not current_user.telegram_id %}
             <div class="alert-info">
-                <p>⚠️ У вас не указан Telegram ID. Укажите его в <a href="{{ url_for('mechanic_profile') }}" style="color: #2563eb; text-decoration: underline;">профиле</a>, чтобы получать уведомления.</p>
+                <p>⚠️ {{ _('telegram_id_not_set') }} <a href="{{ url_for('mechanic_profile') }}" style="color: #2563eb; text-decoration: underline;">{{ _('profile') }}</a>, {{ _('to_receive_notifications') }}</p>
             </div>
             {% else %}
             <div class="alert-info">
@@ -234,9 +323,9 @@
                 <div class="setting-item">
                     <div class="setting-header">
                         <div>
-                            <div class="setting-title">🟢 Заказ готов</div>
+                            <div class="setting-title">🟢 {{ _('order_ready') }}</div>
                             <div class="setting-description">
-                                Уведомление, когда ваш заказ готов к выдаче
+                                {{ _('notify_when_ready') }}
                             </div>
                         </div>
                         <label class="toggle-switch">
@@ -252,9 +341,9 @@
                 <div class="setting-item">
                     <div class="setting-header">
                         <div>
-                            <div class="setting-title">🟡 Заказ в работе</div>
+                            <div class="setting-title">🟡 {{ _('order_in_progress') }}</div>
                             <div class="setting-description">
-                                Уведомление, когда заказ взят в обработку
+                                {{ _('notify_when_processing') }}
                             </div>
                         </div>
                         <label class="toggle-switch">
@@ -270,9 +359,9 @@
                 <div class="setting-item">
                     <div class="setting-header">
                         <div>
-                            <div class="setting-title">🔴 Заказ отменен</div>
+                            <div class="setting-title">🔴 {{ _('order_cancelled') }}</div>
                             <div class="setting-description">
-                                Уведомление, если заказ отменен
+                                {{ _('notify_when_cancelled') }}
                             </div>
                         </div>
                         <label class="toggle-switch">
@@ -285,7 +374,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Сохранить настройки</button>
+                <button type="submit" class="btn btn-primary">{{ _('save_settings') }}</button>
             </form>
         </div>
     </div>
@@ -315,7 +404,7 @@
                 if (response.ok) {
                     alertContainer.innerHTML = `
                         <div class="alert alert-success">
-                            ✅ Настройки успешно сохранены!
+                            ✅ {{ _('settings_saved') }}!
                         </div>
                     `;
                     
@@ -326,18 +415,19 @@
                 } else {
                     alertContainer.innerHTML = `
                         <div class="alert alert-error">
-                            ❌ Ошибка: ${result.error}
+                            ❌ {{ _('error') }}: ${result.error}
                         </div>
                     `;
                 }
             } catch (error) {
                 alertContainer.innerHTML = `
                     <div class="alert alert-error">
-                        ❌ Ошибка: ${error.message}
+                        ❌ {{ _('error') }}: ${error.message}
                     </div>
                 `;
             }
         });
     </script>
+    <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>

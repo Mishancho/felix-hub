@@ -1,0 +1,156 @@
+/* Компонент переключателя языка */
+
+.language-switcher {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+.language-switcher:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.lang-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lang-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.lang-select {
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    cursor: pointer;
+    outline: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.lang-select:hover {
+    background: #f0f0f0;
+    color: #3498db;
+}
+
+.lang-select:focus {
+    background: #e8f4f8;
+}
+
+.lang-select option {
+    padding: 8px;
+    background: white;
+}
+
+/* RTL поддержка */
+[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+}
+
+[dir="ltr"] {
+    direction: ltr;
+    text-align: left;
+}
+
+/* Адаптация переключателя для RTL */
+[dir="rtl"] .language-switcher {
+    right: auto;
+    left: 20px;
+}
+
+/* Адаптация интерфейса для RTL */
+[dir="rtl"] .header {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .action-buttons {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] table {
+    direction: rtl;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+    text-align: right;
+}
+
+[dir="rtl"] .modal-header {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .form-group label {
+    text-align: right;
+}
+
+[dir="rtl"] input,
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+    text-align: right;
+}
+
+[dir="rtl"] .checkbox-group {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .tabs {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .filters {
+    direction: rtl;
+}
+
+/* Анимация смены языка */
+.lang-transition {
+    transition: all 0.3s ease;
+}
+
+body.lang-switching {
+    opacity: 0.95;
+}
+
+/* Стили для разных языков */
+body.lang-he {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+}
+
+body.lang-en {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body.lang-ru {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .language-switcher {
+        top: 10px;
+        right: 10px;
+        padding: 6px 10px;
+    }
+    
+    [dir="rtl"] .language-switcher {
+        right: auto;
+        left: 10px;
+    }
+    
+    .lang-select {
+        font-size: 12px;
+    }
+}

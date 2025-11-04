@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ g.locale or 'ru' }}" dir="{{ 'rtl' if g.locale == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход - Felix Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - Вход для механика">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{{ _('login') }} - Felix Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/language-switcher.css') }}">
     <style>
         * {
             margin: 0;
@@ -13,18 +19,71 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f7fa;
             min-height: 100vh;
+            padding: 0;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-white {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .main-content {
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: calc(100vh - 80px);
             padding: 20px;
         }
 
         .login-container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             max-width: 420px;
             width: 100%;
             padding: 40px;
@@ -159,6 +218,10 @@
         }
 
         @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.3em;
+            }
+            
             .login-container {
                 padding: 30px 20px;
             }
@@ -170,10 +233,30 @@
     </style>
 </head>
 <body>
-    <div class="login-container">
+    <!-- Language Switcher -->
+    <div id="languageSwitcher" class="language-switcher">
+        <select onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)" class="lang-select">
+            <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
+            <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
+            <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
+        </select>
+    </div>
+    
+    <div class="header">
+        <div class="header-content">
+            <h1>🔧 Felix Hub</h1>
+            <div class="header-actions">
+                <a href="/" class="btn btn-white">← {{ _('back_to_home') if _('back_to_home') != 'back_to_home' else 'На главную' }}</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="login-container">
+
         <div class="logo">
             <h1>🔧 Felix Hub</h1>
-            <p>Вход для механиков</p>
+            <p>{{ _('mechanic_login') }}</p>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -188,21 +271,21 @@
 
         <form method="POST" action="{{ url_for('mechanic_login') }}">
             <div class="form-group">
-                <label for="username">Имя пользователя</label>
+                <label for="username">{{ _('username') }}</label>
                 <input type="text" 
                        id="username" 
                        name="username" 
-                       placeholder="Введите ваш username" 
+                       placeholder="{{ _('enter_username') }}" 
                        required 
                        autofocus>
             </div>
 
             <div class="form-group">
-                <label for="password">Пароль</label>
+                <label for="password">{{ _('password') }}</label>
                 <input type="password" 
                        id="password" 
                        name="password" 
-                       placeholder="Введите ваш пароль" 
+                       placeholder="{{ _('enter_password') }}" 
                        required>
             </div>
 
@@ -211,18 +294,19 @@
                        id="remember" 
                        name="remember" 
                        value="true">
-                <label for="remember">Запомнить меня</label>
+                <label for="remember">{{ _('remember_me') }}</label>
             </div>
 
             <button type="submit" class="btn-login">
-                Войти
+                {{ _('login') }}
             </button>
         </form>
 
-        <div class="divider">или</div>
+        <div class="divider">{{ _('or') }}</div>
 
         <div class="link">
-            <a href="{{ url_for('index') }}">← Вернуться на главную</a>
+            <a href="{{ url_for('index') }}">← {{ _('back_to_home') }}</a>
+        </div>
         </div>
     </div>
 
@@ -235,5 +319,6 @@
             }
         });
     </script>
+    <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>

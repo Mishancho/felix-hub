@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ g.locale or 'ru' }}" dir="{{ 'rtl' if g.locale == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои заказы - Felix Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - Мои заказы">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{{ _('my_orders') }} - Felix Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/language-switcher.css') }}">
     <style>
         * {
             margin: 0;
@@ -14,12 +20,63 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-header h1 {
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        
+        .btn-white {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            padding: 30px 20px;
         }
 
         .header {
@@ -28,9 +85,7 @@
             border-radius: 15px;
             margin-bottom: 30px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: none;
         }
 
         .header h1 {
@@ -56,6 +111,17 @@
 
         .nav a:hover, .nav a.active {
             background: #667eea;
+            color: white;
+        }
+        
+        .btn-logout {
+            background: white;
+            color: #667eea;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.2);
             color: white;
         }
 
@@ -281,6 +347,19 @@
         }
 
         @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.3em;
+            }
+            
+            .header-actions {
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+            
             .filters-grid {
                 grid-template-columns: 1fr;
             }
@@ -296,51 +375,68 @@
     </style>
 </head>
 <body>
+    <!-- Language Switcher -->
+    <div id="languageSwitcher" class="language-switcher">
+        <select onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)" class="lang-select">
+            <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
+            <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
+            <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
+        </select>
+    </div>
+    
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>🔧 {{ _('my_orders') }} - {{ current_user.full_name }}</h1>
+            <div class="header-actions">
+                <a href="{{ url_for('mechanic_logout') }}" class="btn btn-logout">{{ _('logout') }}</a>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
-        <div class="header">
-            <div>
-                <h1>🔧 Мои заказы</h1>
-                <p style="color: #999; margin-top: 5px;">{{ current_user.full_name }}</p>
-            </div>
-            <div>
-                <a href="{{ url_for('mechanic_logout') }}" class="btn btn-secondary">Выйти</a>
-            </div>
+        <!-- Language Switcher -->
+        <div id="languageSwitcher" class="language-switcher">
+            <select onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)" class="lang-select">
+                <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
+                <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
+                <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
+            </select>
         </div>
 
         <div class="nav">
-            <a href="{{ url_for('mechanic_dashboard') }}">Главная</a>
-            <a href="{{ url_for('mechanic_orders') }}" class="active">Мои заказы</a>
-            <a href="{{ url_for('mechanic_new_order') }}">Новый заказ</a>
-            <a href="{{ url_for('mechanic_profile') }}">Профиль</a>
-            <a href="{{ url_for('mechanic_settings') }}">Настройки</a>
+            <a href="{{ url_for('mechanic_dashboard') }}">{{ _('home') }}</a>
+            <a href="{{ url_for('mechanic_orders') }}" class="active">{{ _('my_orders') }}</a>
+            <a href="{{ url_for('mechanic_new_order') }}">{{ _('new_order') }}</a>
+            <a href="{{ url_for('mechanic_profile') }}">{{ _('profile') }}</a>
+            <a href="{{ url_for('mechanic_settings') }}">{{ _('settings') }}</a>
         </div>
 
         <div class="filters">
             <form method="GET" action="{{ url_for('mechanic_orders') }}">
                 <div class="filters-grid">
                     <div class="filter-group">
-                        <label for="status">Статус</label>
+                        <label for="status">{{ _('status') }}</label>
                         <select id="status" name="status">
-                            <option value="все" {% if request.args.get('status', 'все') == 'все' %}selected{% endif %}>Все статусы</option>
-                            <option value="новый" {% if request.args.get('status') == 'новый' %}selected{% endif %}>Новый</option>
-                            <option value="в работе" {% if request.args.get('status') == 'в работе' %}selected{% endif %}>В работе</option>
-                            <option value="готово" {% if request.args.get('status') == 'готово' %}selected{% endif %}>Готово</option>
-                            <option value="выдано" {% if request.args.get('status') == 'выдано' %}selected{% endif %}>Выдано</option>
-                            <option value="отменено" {% if request.args.get('status') == 'отменено' %}selected{% endif %}>Отменено</option>
+                            <option value="все" {% if request.args.get('status', 'все') == 'все' %}selected{% endif %}>{{ _('all_statuses') }}</option>
+                            <option value="новый" {% if request.args.get('status') == 'новый' %}selected{% endif %}>{{ _('status_new') }}</option>
+                            <option value="в работе" {% if request.args.get('status') == 'в работе' %}selected{% endif %}>{{ _('status_in_progress') }}</option>
+                            <option value="готово" {% if request.args.get('status') == 'готово' %}selected{% endif %}>{{ _('status_ready') }}</option>
+                            <option value="выдано" {% if request.args.get('status') == 'выдано' %}selected{% endif %}>{{ _('status_delivered') }}</option>
+                            <option value="отменено" {% if request.args.get('status') == 'отменено' %}selected{% endif %}>{{ _('status_cancelled') }}</option>
                         </select>
                     </div>
 
                     <div class="filter-group">
-                        <label for="plate_number">Гос номер</label>
+                        <label for="plate_number">{{ _('plate_number') }}</label>
                         <input type="text" 
                                id="plate_number" 
                                name="plate_number" 
-                               placeholder="Поиск по гос номеру"
+                               placeholder="{{ _('search_by_plate') }}"
                                value="{{ request.args.get('plate_number', '') }}">
                     </div>
 
                     <div class="filter-group" style="align-self: flex-end;">
-                        <button type="submit" class="btn btn-primary">Применить</button>
+                        <button type="submit" class="btn btn-primary">{{ _('apply') }}</button>
                     </div>
                 </div>
             </form>
@@ -348,37 +444,37 @@
 
         <div class="orders-section">
             <div class="orders-header">
-                <h2>Список заказов</h2>
-                <span class="orders-count">Найдено: {{ orders|length }}</span>
+                <h2>{{ _('orders_list') }}</h2>
+                <span class="orders-count">{{ _('found') }}: {{ orders|length }}</span>
             </div>
 
             {% if orders %}
                 {% for order in orders %}
                 <div class="order-card">
                     <div class="order-top">
-                        <div class="order-id">Заказ №{{ order.id }}</div>
+                        <div class="order-id">{{ _('order') }} №{{ order.id }}</div>
                         <span class="status-badge {{ order.status }}">{{ order.status }}</span>
                     </div>
 
                     <div class="order-details">
                         <div class="detail-item">
-                            🚗 <strong>Гос номер:</strong> {{ order.plate_number }}
+                            🚗 <strong>{{ _('plate_number') }}:</strong> {{ order.plate_number }}
                         </div>
                         <div class="detail-item">
-                            📦 <strong>Категория:</strong> {{ order.category }}
+                            📦 <strong>{{ _('category') }}:</strong> {{ get_category_name(order.category) }}
                         </div>
                         <div class="detail-item">
                             {{ '🔧' if order.is_original else '💰' }} 
-                            <strong>Тип:</strong> {{ 'Оригинал' if order.is_original else 'Аналог' }}
+                            <strong>{{ _('type') }}:</strong> {{ _('original') if order.is_original else _('analog') }}
                         </div>
                         <div class="detail-item">
-                            ⏰ <strong>Создан:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            ⏰ <strong>{{ _('created') }}:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}
                         </div>
                     </div>
 
                     {% if order.selected_parts %}
                     <div class="parts-list">
-                        <h4>Детали:</h4>
+                        <h4>{{ _('parts') }}:</h4>
                         <ul>
                             {% for part in order.selected_parts %}
                             <li>{{ part }}</li>
@@ -389,7 +485,7 @@
 
                     {% if order.comment %}
                     <div class="comment-box">
-                        <strong>💬 Комментарий:</strong>
+                        <strong>💬 {{ _('comment') }}:</strong>
                         <p>{{ order.comment }}</p>
                     </div>
                     {% endif %}
@@ -397,13 +493,14 @@
                 {% endfor %}
             {% else %}
                 <div class="empty-state">
-                    <h3>Заказов не найдено</h3>
-                    <p>Попробуйте изменить фильтры или создайте новый заказ</p>
+                    <h3>{{ _('no_orders_found') }}</h3>
+                    <p>{{ _('try_different_filters') }}</p>
                     <br>
-                    <a href="{{ url_for('mechanic_new_order') }}" class="btn btn-primary">+ Создать заказ</a>
+                    <a href="{{ url_for('mechanic_new_order') }}" class="btn btn-primary">+ {{ _('create_order') }}</a>
                 </div>
             {% endif %}
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>

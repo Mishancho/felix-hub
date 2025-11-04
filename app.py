@@ -1,8 +1,9 @@
 import os
 import re
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, g
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_babel import Babel, gettext, lazy_gettext as _l
 from werkzeug.utils import secure_filename
 import requests
 from dotenv import load_dotenv
@@ -12,6 +13,18 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Настройки Babel для многоязычности
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
+app.config['BABEL_DEFAULT_LOCALE'] = 'ru'
+app.config['LANGUAGES'] = {
+    'en': 'English',
+    'he': 'עברית',
+    'ru': 'Русский'
+}
+
+# Создаем экземпляр Babel (инициализация позже)
+babel = Babel()
 
 # Исправление DATABASE_URL для PostgreSQL (Render использует postgres://, SQLAlchemy требует postgresql://)
 database_url = os.getenv('DATABASE_URL', 'sqlite:///instance/felix_hub.db')
@@ -36,6 +49,78 @@ from auth import login_manager, admin_required, mechanic_required, should_notify
 # Инициализация расширений
 db.init_app(app)
 login_manager.init_app(app)
+
+# Функция для определения языка пользователя
+def get_locale():
+    """Определить текущий язык интерфейса"""
+    # 1. Проверяем параметр URL
+    lang = request.args.get('lang')
+    if lang in app.config['LANGUAGES']:
+        session['language'] = lang
+        return lang
+    
+    # 2. Проверяем сессию
+    if 'language' in session:
+        return session.get('language')
+    
+    # 3. Проверяем язык механика (если авторизован)
+    if current_user.is_authenticated and hasattr(current_user, 'language'):
+        return current_user.language
+    
+    # 4. Определяем по заголовкам браузера
+    return request.accept_languages.best_match(app.config['LANGUAGES'].keys())
+
+# Регистрируем функцию определения локали
+babel.init_app(app, locale_selector=get_locale)
+
+@app.context_processor
+def inject_category_translator():
+    """Добавляем функцию для перевода категорий в шаблоны"""
+    def get_category_name(category_name, lang=None):
+        """Получить переведённое название категории"""
+        if lang is None:
+            lang = g.locale if hasattr(g, 'locale') else 'ru'
+        
+        category = Category.query.filter_by(name=category_name).first()
+        if category:
+            return category.get_name(lang)
+        return category_name
+    
+    return dict(get_category_name=get_category_name)
+
+@app.before_request
+def before_request():
+    """Выполняется перед каждым запросом"""
+    g.locale = get_locale()
+    
+    # Определяем направление текста (RTL для иврита)
+    g.text_direction = 'rtl' if g.locale == 'he' else 'ltr'
+
+# Маршрут для смены языка
+@app.route('/set_language/<lang>', methods=['GET', 'POST'])
+def set_language(lang):
+    """Установить язык интерфейса"""
+    if lang in app.config['LANGUAGES']:
+        session['language'] = lang
+        
+        # Если механик авторизован, сохраняем его предпочтение
+        if current_user.is_authenticated and hasattr(current_user, 'language'):
+            current_user.language = lang
+            db.session.commit()
+        
+        # Если есть параметр redirect, перенаправляем туда
+        redirect_url = request.args.get('redirect')
+        if redirect_url:
+            return redirect(redirect_url)
+        
+        # Для AJAX запросов возвращаем JSON
+        if request.is_json or request.method == 'POST':
+            return jsonify({'success': True, 'language': lang})
+        
+        # По умолчанию редирект на главную
+        return redirect(request.referrer or url_for('index'))
+    
+    return jsonify({'success': False, 'error': 'Unsupported language'}), 400
 
 # Telegram настройки
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -610,6 +695,7 @@ def get_mechanic_orders():
     """Получить заказы текущего механика"""
     status = request.args.get('status')
     plate_number = request.args.get('plate_number')
+    lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
     
     query = Order.query.filter_by(mechanic_id=current_user.id)
     
@@ -621,7 +707,7 @@ def get_mechanic_orders():
     
     orders = query.order_by(Order.created_at.desc()).all()
     
-    return jsonify([order.to_dict() for order in orders])
+    return jsonify([order.to_dict(lang=lang) for order in orders])
 
 
 @app.route('/api/mechanic/stats', methods=['GET'])
@@ -847,6 +933,7 @@ def get_parts():
     try:
         category = request.args.get('category')
         active_only = request.args.get('active_only', 'true').lower() == 'true'
+        lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
         
         query = Part.query
         
@@ -856,9 +943,9 @@ def get_parts():
         if category:
             query = query.filter_by(category=category)
         
-        parts = query.order_by(Part.category, Part.sort_order, Part.name).all()
+        parts = query.order_by(Part.category, Part.sort_order, Part.name_ru).all()
         
-        return jsonify([part.to_dict() for part in parts])
+        return jsonify([part.to_dict(lang=lang) for part in parts])
         
     except Exception as e:
         print(f"❌ Ошибка получения запчастей: {e}")
@@ -867,17 +954,26 @@ def get_parts():
 
 @app.route('/api/parts/categories', methods=['GET'])
 def get_parts_categories():
-    """Получить список всех категорий"""
+    """Получить список всех категорий с переводами"""
     try:
-        # Получаем уникальные категории из базы данных
-        categories = db.session.query(Part.category).distinct().order_by(Part.category).all()
-        categories = [cat[0] for cat in categories]
+        lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
+        
+        # Получаем категории из таблицы Category
+        categories = Category.query.filter_by(is_active=True).order_by(Category.sort_order, Category.name).all()
+        
+        if categories:
+            # Возвращаем список с переведёнными названиями
+            return jsonify([cat.get_name(lang) for cat in categories])
+        
+        # Если категорий нет в таблице, получаем уникальные категории из запчастей
+        parts_categories = db.session.query(Part.category).distinct().order_by(Part.category).all()
+        parts_categories = [cat[0] for cat in parts_categories]
         
         # Если категорий нет в БД, используем дефолтные
-        if not categories:
-            categories = list(PARTS_CATALOG.keys())
+        if not parts_categories:
+            parts_categories = list(PARTS_CATALOG.keys())
         
-        return jsonify(categories)
+        return jsonify(parts_categories)
         
     except Exception as e:
         print(f"❌ Ошибка получения категорий: {e}")
@@ -889,19 +985,30 @@ def get_parts_catalog():
     """Получить весь каталог в формате {категория: [запчасти]}"""
     try:
         active_only = request.args.get('active_only', 'true').lower() == 'true'
+        lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
         
         query = Part.query
         if active_only:
             query = query.filter_by(is_active=True)
         
-        parts = query.order_by(Part.category, Part.sort_order, Part.name).all()
+        parts = query.order_by(Part.category, Part.sort_order, Part.name_ru).all()
         
-        # Группируем по категориям
+        # Получаем категории для перевода
+        categories = {cat.name: cat for cat in Category.query.all()}
+        
+        # Группируем по категориям с переводами
         catalog = {}
         for part in parts:
-            if part.category not in catalog:
-                catalog[part.category] = []
-            catalog[part.category].append(part.name)
+            # Получаем переведённое название категории
+            category_obj = categories.get(part.category)
+            if category_obj:
+                category_name = category_obj.get_name(lang)
+            else:
+                category_name = part.category  # Fallback на оригинальное название
+            
+            if category_name not in catalog:
+                catalog[category_name] = []
+            catalog[category_name].append(part.get_name(lang))
         
         # Если каталог пуст, используем дефолтный
         if not catalog:
@@ -921,16 +1028,16 @@ def create_part():
     try:
         data = request.get_json()
         
-        # Валидация
-        if not data.get('name'):
-            return jsonify({'error': 'Название запчасти обязательно'}), 400
+        # Валидация - хотя бы русское название обязательно
+        if not data.get('name_ru'):
+            return jsonify({'error': 'Название на русском обязательно'}), 400
         
         if not data.get('category'):
             return jsonify({'error': 'Категория обязательна'}), 400
         
         # Проверка на дубликаты
         existing = Part.query.filter_by(
-            name=data['name'],
+            name_ru=data['name_ru'],
             category=data['category']
         ).first()
         
@@ -939,7 +1046,13 @@ def create_part():
         
         # Создание запчасти
         part = Part(
-            name=data['name'].strip(),
+            name_ru=data['name_ru'].strip(),
+            name_en=data.get('name_en', '').strip() if data.get('name_en') else None,
+            name_he=data.get('name_he', '').strip() if data.get('name_he') else None,
+            description_ru=data.get('description_ru', '').strip() if data.get('description_ru') else None,
+            description_en=data.get('description_en', '').strip() if data.get('description_en') else None,
+            description_he=data.get('description_he', '').strip() if data.get('description_he') else None,
+            name=data['name_ru'].strip(),  # Устанавливаем старое поле для обратной совместимости
             category=data['category'].strip(),
             is_active=data.get('is_active', True),
             sort_order=data.get('sort_order', 0)
@@ -975,18 +1088,34 @@ def update_part(part_id):
         part = Part.query.get_or_404(part_id)
         data = request.get_json()
         
-        if 'name' in data:
+        if 'name_ru' in data:
             # Проверка на дубликаты при изменении имени
-            if data['name'] != part.name:
+            if data['name_ru'] != part.name_ru:
                 existing = Part.query.filter_by(
-                    name=data['name'],
+                    name_ru=data['name_ru'],
                     category=data.get('category', part.category)
                 ).first()
                 
                 if existing:
                     return jsonify({'error': 'Такая запчасть уже существует в этой категории'}), 400
             
-            part.name = data['name'].strip()
+            part.name_ru = data['name_ru'].strip()
+            part.name = data['name_ru'].strip()  # Обновляем старое поле для обратной совместимости
+        
+        if 'name_en' in data:
+            part.name_en = data['name_en'].strip() if data['name_en'] else None
+        
+        if 'name_he' in data:
+            part.name_he = data['name_he'].strip() if data['name_he'] else None
+        
+        if 'description_ru' in data:
+            part.description_ru = data['description_ru'].strip() if data['description_ru'] else None
+        
+        if 'description_en' in data:
+            part.description_en = data['description_en'].strip() if data['description_en'] else None
+        
+        if 'description_he' in data:
+            part.description_he = data['description_he'].strip() if data['description_he'] else None
         
         if 'category' in data:
             part.category = data['category'].strip()
@@ -1067,16 +1196,24 @@ def bulk_create_parts():
             try:
                 # Проверка на существование
                 existing = Part.query.filter_by(
-                    name=item['name'],
+                    name_ru=item.get('name_ru', item.get('name')),
                     category=item['category']
                 ).first()
                 
                 if existing:
-                    errors.append(f"Запчасть '{item['name']}' уже существует в категории '{item['category']}'")
+                    errors.append(f"Запчасть '{item.get('name_ru', item.get('name'))}' уже существует в категории '{item['category']}'")
                     continue
                 
+                name_ru = item.get('name_ru', item.get('name', '')).strip()
+                
                 part = Part(
-                    name=item['name'].strip(),
+                    name_ru=name_ru,
+                    name_en=item.get('name_en', '').strip() if item.get('name_en') else None,
+                    name_he=item.get('name_he', '').strip() if item.get('name_he') else None,
+                    description_ru=item.get('description_ru', '').strip() if item.get('description_ru') else None,
+                    description_en=item.get('description_en', '').strip() if item.get('description_en') else None,
+                    description_he=item.get('description_he', '').strip() if item.get('description_he') else None,
+                    name=name_ru,  # Старое поле для обратной совместимости
                     category=item['category'].strip(),
                     is_active=item.get('is_active', True),
                     sort_order=item.get('sort_order', 0)
@@ -1125,7 +1262,7 @@ def import_default_catalog():
             for idx, part_name in enumerate(parts):
                 # Проверка на существование
                 existing = Part.query.filter_by(
-                    name=part_name,
+                    name_ru=part_name,
                     category=category
                 ).first()
                 
@@ -1134,7 +1271,8 @@ def import_default_catalog():
                     continue
                 
                 part = Part(
-                    name=part_name,
+                    name_ru=part_name,
+                    name=part_name,  # Старое поле для обратной совместимости
                     category=category,
                     is_active=True,
                     sort_order=idx
@@ -1167,6 +1305,7 @@ def get_categories_api():
     """Получить список всех категорий"""
     try:
         active_only = request.args.get('active_only', 'false').lower() == 'true'
+        lang = request.args.get('lang', 'ru')  # Получаем язык из параметра
         
         query = Category.query
         if active_only:
@@ -1174,7 +1313,8 @@ def get_categories_api():
         
         categories = query.order_by(Category.sort_order, Category.name).all()
         
-        return jsonify([cat.to_dict() for cat in categories])
+        # Возвращаем данные с учётом языка
+        return jsonify([cat.to_dict(lang=lang) for cat in categories])
         
     except Exception as e:
         print(f"❌ Ошибка получения категорий: {e}")
@@ -1197,9 +1337,12 @@ def create_category():
         if existing:
             return jsonify({'error': 'Категория с таким именем уже существует'}), 400
         
-        # Создание категории
+        # Создание категории с многоязычными полями
         category = Category(
             name=data['name'].strip(),
+            name_ru=data.get('name_ru', data['name']).strip(),
+            name_en=data.get('name_en', '').strip() if data.get('name_en') else None,
+            name_he=data.get('name_he', '').strip() if data.get('name_he') else None,
             is_active=data.get('is_active', True),
             sort_order=data.get('sort_order', 0)
         )
@@ -1249,6 +1392,16 @@ def update_category(category_id):
             Part.query.filter_by(category=old_name).update({'category': new_name})
             
             category.name = new_name
+        
+        # Обновляем многоязычные поля
+        if 'name_ru' in data:
+            category.name_ru = data['name_ru'].strip() if data['name_ru'] else None
+        
+        if 'name_en' in data:
+            category.name_en = data['name_en'].strip() if data['name_en'] else None
+        
+        if 'name_he' in data:
+            category.name_he = data['name_he'].strip() if data['name_he'] else None
         
         if 'is_active' in data:
             category.is_active = data['is_active']

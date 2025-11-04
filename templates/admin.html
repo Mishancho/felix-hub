@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ g.locale if g.locale else 'ru' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Felix Hub - Админ панель</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - Панель администратора">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Felix Hub - {{ _('admin_panel') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
     <style>
         * {
             margin: 0;
@@ -310,43 +315,56 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/language-switcher.css">
 </head>
 <body>
+    <!-- Переключатель языка -->
+    <div id="languageSwitcher" class="language-switcher">
+        <div class="lang-selector">
+            <span class="lang-icon">🌍</span>
+            <select id="langSelect" class="lang-select" onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)">
+                <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
+                <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
+                <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
+            </select>
+        </div>
+    </div>
+    
     <div class="header">
         <div class="header-content">
-            <h1>👨‍💼 Панель администратора Felix Hub</h1>
+            <h1>👨‍💼 {{ _('admin_panel_title') }}</h1>
             <div class="header-actions">
-                <a href="/" class="btn btn-white">← Главная</a>
-                <a href="/admin/logout" class="btn btn-white">Выход</a>
+                <a href="/" class="btn btn-white">← {{ _('home') }}</a>
+                <a href="/admin/logout" class="btn btn-white">{{ _('logout') }}</a>
             </div>
         </div>
     </div>
     
     <div class="container">
         <!-- Навигация -->
-        <div style="display: flex; gap: 10px; margin-bottom: 30px;">
-            <a href="/admin" class="btn" style="background: #667eea; color: white;">📋 Заказы</a>
-            <a href="/admin/mechanics" class="btn btn-white" style="border: 2px solid #667eea; color: #667eea;">👥 Механики</a>
-            <a href="/admin/parts" class="btn btn-white" style="border: 2px solid #667eea; color: #667eea;">📦 Запчасти</a>
+        <div style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;">
+            <a href="/admin" class="btn" style="background: #667eea; color: white;">📋 {{ _('orders') }}</a>
+            <a href="/admin/mechanics" class="btn btn-white" style="border: 2px solid #667eea; color: #667eea;">👥 {{ _('mechanics') }}</a>
+            <a href="/admin/parts" class="btn btn-white" style="border: 2px solid #667eea; color: #667eea;">📦 {{ _('parts') }}</a>
         </div>
         
         <!-- Статистика -->
         <div class="stats">
             <div class="stat-card">
                 <h3 id="statTotal">0</h3>
-                <p>Всего заказов</p>
+                <p>{{ _('total_orders') }}</p>
             </div>
             <div class="stat-card">
                 <h3 id="statNew">0</h3>
-                <p>Новых</p>
+                <p>{{ _('new_orders') }}</p>
             </div>
             <div class="stat-card">
                 <h3 id="statInProgress">0</h3>
-                <p>В работе</p>
+                <p>{{ _('in_progress') }}</p>
             </div>
             <div class="stat-card">
                 <h3 id="statReady">0</h3>
-                <p>Готово</p>
+                <p>{{ _('ready') }}</p>
             </div>
         </div>
         
@@ -354,29 +372,29 @@
         <div class="filters">
             <div class="filters-grid">
                 <div class="filter-group">
-                    <label>Статус</label>
+                    <label>{{ _('status') }}</label>
                     <select id="filterStatus">
-                        <option value="все">Все</option>
-                        <option value="новый">Новые</option>
-                        <option value="в работе">В работе</option>
-                        <option value="готово">Готово</option>
-                        <option value="отменён">Отменённые</option>
+                        <option value="все">{{ _('all') }}</option>
+                        <option value="новый">{{ _('new') }}</option>
+                        <option value="в работе">{{ _('in_progress') }}</option>
+                        <option value="готово">{{ _('ready') }}</option>
+                        <option value="отменён">{{ _('cancelled') }}</option>
                     </select>
                 </div>
                 
                 <div class="filter-group">
-                    <label>Гос номер</label>
+                    <label>{{ _('plate_number') }}</label>
                     <input type="text" id="filterPlate" placeholder="123-45-678">
                 </div>
                 
                 <div class="filter-group">
-                    <label>Механик</label>
-                    <input type="text" id="filterMechanic" placeholder="Имя механика">
+                    <label>{{ _('mechanic') }}</label>
+                    <input type="text" id="filterMechanic" placeholder="{{ _('mechanic_name') }}">
                 </div>
                 
                 <div class="filter-group">
                     <label>&nbsp;</label>
-                    <button class="btn btn-info" onclick="loadOrders()" style="width: 100%;">🔄 Обновить</button>
+                    <button class="btn btn-info" onclick="loadOrders()" style="width: 100%;">🔄 {{ _('refresh') }}</button>
                 </div>
             </div>
         </div>
@@ -384,10 +402,10 @@
         <!-- Таблица заказов -->
         <div class="orders-table">
             <div class="table-header">
-                <h2>📋 Список заказов</h2>
+                <h2>📋 {{ _('orders_list') }}</h2>
             </div>
             
-            <div id="tableContent">
+            <div id="tableContent" class="table-wrapper">
                 <div class="loading">⏳ Загрузка данных...</div>
             </div>
         </div>
@@ -599,5 +617,8 @@
             };
         }
     </script>
+    <script src="/static/js/language.js"></script>
+    <script src="/static/js/language-switcher.js"></script>
+    <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>
