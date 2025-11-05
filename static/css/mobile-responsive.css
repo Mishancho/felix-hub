@@ -469,14 +469,23 @@ textarea {
     .form-group select {
         -webkit-appearance: menulist-button;
         appearance: menulist-button;
-        max-height: none;
+        max-height: 300px !important; /* Ограничиваем высоту для прокрутки */
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Специально для iOS - улучшаем прокрутку select */
+    @supports (-webkit-touch-callout: none) {
+        .form-group select {
+            -webkit-overflow-scrolling: touch !important;
+            overflow-y: scroll !important;
+        }
     }
     
     .form-group select option {
         font-size: 16px;
         padding: 10px;
+        min-height: 44px; /* Минимальная высота для удобного тапа */
     }
     
     /* Checkbox и Radio увеличенные для сенсорных экранов */
