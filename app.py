@@ -203,13 +203,21 @@ def notify_admin_new_order(order):
     if not TELEGRAM_ADMIN_CHAT_ID:
         return
     
-    # Формируем список деталей с количеством
+    # Формируем список деталей с количеством на русском языке
     parts_list = []
     for part in order.selected_parts:
         if isinstance(part, dict):
-            # Новый формат с количеством
-            name = part.get('name', '')
+            # Новый формат с количеством и опционально part_id
+            part_id = part.get('part_id')
             quantity = part.get('quantity', 1)
+            
+            # Если есть part_id, получаем название на русском
+            if part_id:
+                part_obj = Part.query.get(part_id)
+                name = part_obj.get_name('ru') if part_obj else part.get('name', '')
+            else:
+                name = part.get('name', '')
+            
             if quantity > 1:
                 parts_list.append(f"• {name} <b>(x{quantity})</b>")
             else:
@@ -220,11 +228,17 @@ def notify_admin_new_order(order):
     
     parts_text = '\n'.join(parts_list)
     
+    # Получаем переведенное название категории на русском
+    category_name = order.category
+    category_obj = Category.query.filter_by(name=order.category).first()
+    if category_obj:
+        category_name = category_obj.get_name('ru')
+    
     message = f"""🔔 <b>Новый заказ от {order.mechanic_name}</b>
 
 📋 Заказ №{order.id}
 🚗 Гос номер: <b>{order.plate_number}</b>
-📦 Категория: {order.category}
+📦 Категория: {category_name}
 
 <b>Детали:</b>
 {parts_text}
@@ -276,6 +290,12 @@ def validate_plate_number(plate_number):
 
 def print_receipt(order):
     """Печать чека (симуляция - можно заменить на реальную печать)"""
+    # Получаем переведенное название категории на русском
+    category_name = order.category
+    category_obj = Category.query.filter_by(name=order.category).first()
+    if category_obj:
+        category_name = category_obj.get_name('ru')
+    
     receipt = f"""
 {'='*40}
 СТО Felix
@@ -283,12 +303,31 @@ def print_receipt(order):
 Заказ №{order.id}
 Механик: {order.mechanic_name}
 Гос номер: {order.plate_number}
-Категория: {order.category}
+Категория: {category_name}
 {'='*40}
 Детали:
 """
+    # Выводим детали на русском языке
     for part in order.selected_parts:
-        receipt += f"- {part}\n"
+        if isinstance(part, dict):
+            # Новый формат с количеством и опционально part_id
+            part_id = part.get('part_id')
+            quantity = part.get('quantity', 1)
+            
+            # Если есть part_id, получаем название на русском
+            if part_id:
+                part_obj = Part.query.get(part_id)
+                name = part_obj.get_name('ru') if part_obj else part.get('name', '')
+            else:
+                name = part.get('name', '')
+            
+            if quantity > 1:
+                receipt += f"- {name} (x{quantity})\n"
+            else:
+                receipt += f"- {name}\n"
+        else:
+            # Старый формат (просто строка)
+            receipt += f"- {part}\n"
     
     receipt += f"""{'='*40}
 Статус: {order.status}
@@ -491,23 +530,29 @@ def submit_order():
             return jsonify({'error': 'Выберите хотя бы одну деталь'}), 400
         
         # Нормализация формата selected_parts
-        # Поддерживаем как старый формат (массив строк), так и новый (массив объектов с количеством)
+        # Поддерживаем как старый формат (массив строк), так и новый (массив объектов с количеством и part_id)
         selected_parts = data['selected_parts']
         normalized_parts = []
         
         for part in selected_parts:
             if isinstance(part, str):
-                # Старый формат: просто строка
+                # Старый формат: просто строка (для обратной совместимости)
                 normalized_parts.append({
                     'name': part,
                     'quantity': 1
                 })
             elif isinstance(part, dict):
-                # Новый формат: объект с name и quantity
-                normalized_parts.append({
+                # Новый формат: объект с name, quantity и опционально part_id
+                part_entry = {
                     'name': part.get('name', ''),
                     'quantity': int(part.get('quantity', 1))
-                })
+                }
+                
+                # Если передан part_id, сохраняем его для последующего перевода
+                if 'part_id' in part:
+                    part_entry['part_id'] = part['part_id']
+                
+                normalized_parts.append(part_entry)
         
         # Создание нового заказа
         order = Order(
@@ -599,7 +644,8 @@ def get_orders():
         
         orders = query.order_by(Order.created_at.desc()).all()
         
-        return jsonify([order.to_dict() for order in orders])
+        # Админ всегда получает данные на русском языке
+        return jsonify([order.to_dict(lang='ru') for order in orders])
     except Exception as e:
         error_msg = str(e)
         
@@ -1088,7 +1134,7 @@ def get_parts_categories():
 
 @app.route('/api/parts/catalog', methods=['GET'])
 def get_parts_catalog():
-    """Получить весь каталог в формате {категория: [запчасти]}"""
+    """Получить весь каталог в формате {категория: [запчасти с ID]}"""
     try:
         active_only = request.args.get('active_only', 'true').lower() == 'true'
         lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
@@ -1102,7 +1148,7 @@ def get_parts_catalog():
         # Получаем категории для перевода
         categories = {cat.name: cat for cat in Category.query.all()}
         
-        # Группируем по категориям с переводами
+        # Группируем по категориям с переводами и ID
         catalog = {}
         for part in parts:
             # Получаем переведённое название категории
@@ -1114,9 +1160,14 @@ def get_parts_catalog():
             
             if category_name not in catalog:
                 catalog[category_name] = []
-            catalog[category_name].append(part.get_name(lang))
+            
+            # Добавляем запчасть с ID и переведённым названием
+            catalog[category_name].append({
+                'id': part.id,
+                'name': part.get_name(lang)
+            })
         
-        # Если каталог пуст, используем дефолтный
+        # Если каталог пуст, используем дефолтный (без ID для обратной совместимости)
         if not catalog:
             catalog = PARTS_CATALOG
         

@@ -140,6 +140,13 @@
             font-size: 15px;
             transition: all 0.3s;
         }
+        
+        .form-group select {
+            -webkit-appearance: menulist;
+            appearance: menulist;
+            background-color: white;
+            cursor: pointer;
+        }
 
         .form-group input[type="text"]:focus,
         .form-group select:focus,
@@ -363,6 +370,18 @@
             .container {
                 padding: 30px 20px;
             }
+            
+            /* Исправление прокрутки для select на мобильных */
+            select {
+                font-size: 16px !important;
+                -webkit-appearance: menulist-button;
+                appearance: menulist-button;
+                max-height: none;
+            }
+            
+            select option {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -495,23 +514,29 @@
                 const item = document.createElement('label');
                 item.className = 'checkbox-item';
                 
+                // Поддержка нового формата (объект с id и name) и старого (просто строка)
+                const partId = typeof part === 'object' ? part.id : null;
+                const partName = typeof part === 'object' ? part.name : part;
+                const partKey = partId || partName; // Ключ для selectedPartsGlobal
+                
                 // Проверяем, была ли эта деталь уже выбрана
-                const isChecked = selectedPartsGlobal.hasOwnProperty(part);
-                const quantity = selectedPartsGlobal[part] || 1;
+                const isChecked = selectedPartsGlobal.hasOwnProperty(partKey);
+                const quantity = isChecked ? selectedPartsGlobal[partKey].quantity : 1;
                 
                 if (isChecked) {
                     item.classList.add('checked');
                 }
                 
-                const safeId = 'part_' + part.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const safeId = 'part_' + partName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                 
                 item.innerHTML = `
                     <input type="checkbox" 
                            id="${safeId}"
                            name="selected_parts" 
-                           value="${part}"
+                           value="${partName}"
+                           data-part-id="${partId || ''}"
                            ${isChecked ? 'checked' : ''}>
-                    <span class="part-name">${part}</span>
+                    <span class="part-name">${partName}</span>
                     <div class="quantity-control">
                         <label>{{ _('quantity') if _('quantity') != 'quantity' else 'Кол-во' }}:</label>
                         <input type="number" 
@@ -529,15 +554,22 @@
                 const quantityInput = item.querySelector('.part-quantity');
                 
                 checkbox.addEventListener('change', function() {
+                    const partId = this.getAttribute('data-part-id');
+                    const partKey = partId || this.value;
+                    
                     // Переключаем класс checked на родительском label
                     if (this.checked) {
                         item.classList.add('checked');
-                        // Добавляем в глобальный объект с количеством
-                        selectedPartsGlobal[this.value] = parseInt(quantityInput.value) || 1;
+                        // Добавляем в глобальный объект с количеством и ID
+                        selectedPartsGlobal[partKey] = {
+                            name: this.value,
+                            quantity: parseInt(quantityInput.value) || 1,
+                            part_id: partId ? parseInt(partId) : null
+                        };
                     } else {
                         item.classList.remove('checked');
                         // Удаляем из глобального объекта
-                        delete selectedPartsGlobal[this.value];
+                        delete selectedPartsGlobal[partKey];
                     }
                     updatePartsCounter();
                 });
@@ -548,7 +580,11 @@
                     if (checkbox.checked) {
                         const qty = parseInt(this.value) || 1;
                         this.value = Math.max(1, Math.min(999, qty));
-                        selectedPartsGlobal[checkbox.value] = this.value;
+                        const partId = checkbox.getAttribute('data-part-id');
+                        const partKey = partId || checkbox.value;
+                        if (selectedPartsGlobal[partKey]) {
+                            selectedPartsGlobal[partKey].quantity = parseInt(this.value);
+                        }
                     }
                 });
             });
@@ -599,18 +635,26 @@
 
             const alertContainer = document.getElementById('alert-container');
             
-            // Формируем массив деталей с количеством
+            // Формируем массив деталей с количеством и ID
             const selectedParts = [];
             
             // Добавляем детали из каталога
-            for (const [partName, quantity] of Object.entries(selectedPartsGlobal)) {
-                selectedParts.push({
-                    name: partName,
-                    quantity: parseInt(quantity)
-                });
+            for (const key in selectedPartsGlobal) {
+                const part = selectedPartsGlobal[key];
+                const partData = {
+                    name: part.name,
+                    quantity: part.quantity
+                };
+                
+                // Если есть part_id, добавляем его для перевода
+                if (part.part_id) {
+                    partData.part_id = part.part_id;
+                }
+                
+                selectedParts.push(partData);
             }
 
-            // Добавляем ручные детали
+            // Добавляем ручные детали (без ID)
             const manualPartInputs = document.querySelectorAll('.manual-part-input');
             const manualPartQuantities = document.querySelectorAll('.manual-part-quantity');
             

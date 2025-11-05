@@ -74,6 +74,13 @@
             font-family: inherit;
         }
         
+        .form-group select {
+            -webkit-appearance: menulist;
+            appearance: menulist;
+            background-color: white;
+            cursor: pointer;
+        }
+        
         .form-group input[type="text"]:focus,
         .form-group select:focus,
         .form-group textarea:focus {
@@ -329,6 +336,19 @@
             .custom-parts-input {
                 flex-direction: column;
             }
+            
+            /* Фиксируем прокрутку для select на мобильных устройствах */
+            .form-group select {
+                font-size: 16px; /* Предотвращает зум на iOS */
+                max-height: none; /* Убираем ограничение высоты */
+                -webkit-appearance: menulist-button; /* Нативный вид для iOS */
+                appearance: menulist-button;
+            }
+            
+            /* Для Android */
+            .form-group select option {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -517,8 +537,8 @@
         // Каталог запчастей
         const catalog = {{ catalog | tojson }};
         
-        // Выбранные детали - сохраняем с количеством
-        let selectedParts = {}; // Формат: { 'Название детали': количество }
+        // Выбранные детали - сохраняем с количеством и ID
+        let selectedParts = {}; // Формат: { 'id_или_name': { name: 'название', quantity: число, part_id: id } }
         let customParts = [];
         
         // Обработчик выбора категории
@@ -535,19 +555,28 @@
                     const div = document.createElement('div');
                     div.className = 'checkbox-item';
                     
+                    // Поддержка нового формата (объект с id и name) и старого (просто строка)
+                    const partId = typeof part === 'object' ? part.id : null;
+                    const partName = typeof part === 'object' ? part.name : part;
+                    const partKey = partId || partName; // Ключ для selectedParts
+                    
                     // Проверяем, была ли эта деталь уже выбрана
-                    const isChecked = selectedParts.hasOwnProperty(part);
-                    const quantity = selectedParts[part] || 1;
+                    const isChecked = selectedParts.hasOwnProperty(partKey);
+                    const quantity = isChecked ? selectedParts[partKey].quantity : 1;
                     
                     if (isChecked) {
                         div.classList.add('checked');
                     }
                     
-                    const safeId = 'part_' + part.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                    const safeId = 'part_' + partName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                     
                     div.innerHTML = `
-                        <input type="checkbox" id="${safeId}" value="${part}" ${isChecked ? 'checked' : ''}>
-                        <span class="part-name">${part}</span>
+                        <input type="checkbox" 
+                               id="${safeId}" 
+                               value="${partName}" 
+                               data-part-id="${partId || ''}"
+                               ${isChecked ? 'checked' : ''}>
+                        <span class="part-name">${partName}</span>
                         <div class="quantity-control">
                             <label>${t.quantityLabel || 'Кол-во'}:</label>
                             <input type="number" 
@@ -565,13 +594,20 @@
                     const quantityInput = div.querySelector('.part-quantity');
                     
                     checkbox.addEventListener('change', function() {
+                        const partId = this.getAttribute('data-part-id');
+                        const partKey = partId || this.value;
+                        
                         // Переключаем класс checked на родительском div
                         if (this.checked) {
                             div.classList.add('checked');
-                            selectedParts[this.value] = parseInt(quantityInput.value) || 1;
+                            selectedParts[partKey] = {
+                                name: this.value,
+                                quantity: parseInt(quantityInput.value) || 1,
+                                part_id: partId ? parseInt(partId) : null
+                            };
                         } else {
                             div.classList.remove('checked');
-                            delete selectedParts[this.value];
+                            delete selectedParts[partKey];
                         }
                         updateSelectedParts();
                     });
@@ -582,7 +618,11 @@
                         if (checkbox.checked) {
                             const qty = parseInt(this.value) || 1;
                             this.value = Math.max(1, Math.min(999, qty));
-                            selectedParts[checkbox.value] = this.value;
+                            const partId = checkbox.getAttribute('data-part-id');
+                            const partKey = partId || checkbox.value;
+                            if (selectedParts[partKey]) {
+                                selectedParts[partKey].quantity = parseInt(this.value);
+                            }
                         }
                     });
                 });
@@ -652,18 +692,26 @@
                 return;
             }
             
-            // Формируем массив деталей с количеством
+                        // Формируем список деталей с количеством и ID
             const allParts = [];
             
-            // Добавляем детали из каталога
-            for (const [partName, quantity] of Object.entries(selectedParts)) {
-                allParts.push({
-                    name: partName,
-                    quantity: parseInt(quantity)
-                });
+            // Добавляем выбранные детали из каталога
+            for (const key in selectedParts) {
+                const part = selectedParts[key];
+                const partData = {
+                    name: part.name,
+                    quantity: part.quantity
+                };
+                
+                // Если есть part_id, добавляем его для перевода
+                if (part.part_id) {
+                    partData.part_id = part.part_id;
+                }
+                
+                allParts.push(partData);
             }
             
-            // Добавляем кастомные детали (без количества, по умолчанию 1)
+            // Добавляем кастомные детали (без ID, по умолчанию количество 1)
             customParts.forEach(part => {
                 allParts.push({
                     name: part,

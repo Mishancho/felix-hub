@@ -465,6 +465,20 @@ textarea {
         font-size: 16px !important;
     }
     
+    /* Исправление прокрутки для select на мобильных */
+    .form-group select {
+        -webkit-appearance: menulist-button;
+        appearance: menulist-button;
+        max-height: none;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .form-group select option {
+        font-size: 16px;
+        padding: 10px;
+    }
+    
     /* Checkbox и Radio увеличенные для сенсорных экранов */
     .checkbox-item, .radio-item {
         padding: 15px 12px !important;

@@ -291,13 +291,43 @@ class Order(db.Model):
             if category_obj:
                 category_name = category_obj.get_name(lang)
         
+        # Обработка selected_parts с переводом
+        selected_parts_translated = []
+        for part in (self.selected_parts or []):
+            if isinstance(part, dict):
+                part_id = part.get('part_id')
+                quantity = part.get('quantity', 1)
+                
+                # Если есть part_id, получаем название на нужном языке
+                if part_id:
+                    part_obj = Part.query.get(part_id)
+                    if part_obj:
+                        part_name = part_obj.get_name(lang) if lang else part_obj.get_name('ru')
+                        selected_parts_translated.append({
+                            'part_id': part_id,
+                            'name': part_name,
+                            'quantity': quantity
+                        })
+                    else:
+                        # Если запчасть не найдена, используем старое название
+                        selected_parts_translated.append({
+                            'name': part.get('name', 'Unknown'),
+                            'quantity': quantity
+                        })
+                else:
+                    # Старый формат без part_id
+                    selected_parts_translated.append(part)
+            else:
+                # Совсем старый формат (просто строка)
+                selected_parts_translated.append(part)
+        
         data = {
             'id': self.id,
             'mechanic_name': self.mechanic_name,
             'telegram_id': self.telegram_id,
             'category': category_name,
             'plate_number': self.plate_number,
-            'selected_parts': self.selected_parts or [],
+            'selected_parts': selected_parts_translated,
             'is_original': self.is_original,
             'photo_url': self.photo_url,
             'comment': self.comment,
