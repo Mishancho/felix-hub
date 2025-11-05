@@ -1482,15 +1482,14 @@ def init_db():
             print("✅ База данных инициализирована")
             
             # Проверка наличия таблиц
-            from sqlalchemy import inspect, text
+            from sqlalchemy import inspect
             inspector = inspect(db.engine)
             tables = inspector.get_table_names()
             print(f"📊 Найдено таблиц: {len(tables)}")
             print(f"📋 Таблицы: {', '.join(tables)}")
             
-            # Автоматическая миграция: добавление колонок многоязычности
-            print("\n🔄 Проверка необходимости миграций...")
-            run_auto_migrations()
+            # МИГРАЦИИ УБРАНЫ! Они выполняются через отдельный скрипт run_migrations.py
+            # Это предотвращает блокировку при запуске на Render
             
             # Проверка наличия механиков
             mechanic_count = Mechanic.query.count()
@@ -1503,135 +1502,16 @@ def init_db():
             traceback.print_exc()
 
 
-def run_auto_migrations():
-    """Автоматические миграции при старте приложения"""
-    try:
-        from sqlalchemy import inspect, text
-        
-        def column_exists(table_name, column_name):
-            """Проверка существования колонки"""
-            inspector = inspect(db.engine)
-            columns = [col['name'] for col in inspector.get_columns(table_name)]
-            return column_name in columns
-        
-        # Миграция 1: Многоязычность для категорий
-        if 'categories' in inspect(db.engine).get_table_names():
-            if not column_exists('categories', 'name_en'):
-                print("  📋 Добавление многоязычности для категорий...")
-                with db.engine.connect() as conn:
-                    trans = conn.begin()
-                    try:
-                        conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS name_en VARCHAR(120)"))
-                        conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS name_he VARCHAR(120)"))
-                        conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS name_ru VARCHAR(120)"))
-                        trans.commit()
-                        print("  ✅ Колонки для категорий добавлены")
-                        
-                        # Обновление переводов
-                        update_category_translations()
-                    except Exception as e:
-                        trans.rollback()
-                        print(f"  ⚠️  Ошибка миграции категорий: {e}")
-            else:
-                print("  ✓ Многоязычность категорий уже настроена")
-        
-        # Миграция 2: Многоязычность для запчастей
-        if 'parts' in inspect(db.engine).get_table_names():
-            if not column_exists('parts', 'name_ru'):
-                print("  📋 Добавление многоязычности для запчастей...")
-                with db.engine.connect() as conn:
-                    trans = conn.begin()
-                    try:
-                        # Добавляем все колонки для многоязычности
-                        if not column_exists('parts', 'name_en'):
-                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS name_en VARCHAR(250)"))
-                        if not column_exists('parts', 'name_he'):
-                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS name_he VARCHAR(250)"))
-                        if not column_exists('parts', 'name_ru'):
-                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS name_ru VARCHAR(250)"))
-                        if not column_exists('parts', 'description_en'):
-                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_en TEXT"))
-                        if not column_exists('parts', 'description_he'):
-                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_he TEXT"))
-                        if not column_exists('parts', 'description_ru'):
-                            conn.execute(text("ALTER TABLE parts ADD COLUMN IF NOT EXISTS description_ru TEXT"))
-                        trans.commit()
-                        print("  ✅ Колонки для запчастей добавлены")
-                    except Exception as e:
-                        trans.rollback()
-                        print(f"  ⚠️  Ошибка миграции запчастей: {e}")
-            else:
-                print("  ✓ Многоязычность запчастей уже настроена")
-        
-        print("✅ Миграции проверены и выполнены")
-        
-    except Exception as e:
-        print(f"⚠️  Ошибка при выполнении миграций: {e}")
-        # Не прерываем запуск приложения
 
-
-def update_category_translations():
-    """Обновление переводов для стандартных категорий"""
-    try:
-        from sqlalchemy import text
-        
-        translations = {
-            'Тормоза': {'en': 'Brakes', 'he': 'בלמים'},
-            'Двигатель': {'en': 'Engine', 'he': 'מנוע'},
-            'Подвеска': {'en': 'Suspension', 'he': 'מתלים'},
-            'Электрика': {'en': 'Electrical', 'he': 'חשמל'},
-            'Расходники': {'en': 'Consumables', 'he': 'מתכלים'},
-            'Добавки': {'en': 'Additives', 'he': 'תוספים'},
-            'Типуль': {'en': 'Maintenance', 'he': 'טיפול'}
-        }
-        
-        updated = 0
-        for ru_name, trans in translations.items():
-            category = Category.query.filter_by(name=ru_name).first()
-            if category:
-                with db.engine.connect() as conn:
-                    trans_db = conn.begin()
-                    try:
-                        conn.execute(
-                            text("""
-                                UPDATE categories 
-                                SET name_ru = :name_ru,
-                                    name_en = :name_en,
-                                    name_he = :name_he
-                                WHERE id = :id
-                            """),
-                            {
-                                'id': category.id,
-                                'name_ru': ru_name,
-                                'name_en': trans['en'],
-                                'name_he': trans['he']
-                            }
-                        )
-                        trans_db.commit()
-                        updated += 1
-                    except Exception as e:
-                        trans_db.rollback()
-        
-        if updated > 0:
-            print(f"  ✅ Обновлено переводов категорий: {updated}")
-        
-    except Exception as e:
-        print(f"  ⚠️  Ошибка обновления переводов: {e}")
-
-# Инициализация при запуске через Gunicorn (но не блокирующая)
+# Инициализация при запуске через Gunicorn (НЕ БЛОКИРУЮЩАЯ!)
+# БД создается через init_render_db.py в buildCommand
+# Миграции выполняются через run_migrations.py после деплоя
 print("="*60)
-print("🚀 Инициализация Felix Hub...")
+print("🚀 Felix Hub готов к запуску")
 print("="*60)
 
-try:
-    # Пробуем инициализировать БД, но не падаем если не получается
-    init_db()
-    print("✅ Приложение готово к работе")
-except Exception as e:
-    print(f"⚠️  Инициализация БД отложена: {str(e)[:100]}")
-    print("⚠️  Приложение запустится, БД инициализируется при первом подключении")
-
-print("="*60)
+# НЕ вызываем init_db() при импорте - это может заблокировать запуск!
+# БД уже инициализирована через init_render_db.py в процессе сборки
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

@@ -1,31 +1,29 @@
 #!/usr/bin/env python3
 """
-Безопасная обёртка для запуска приложения на Render
+Скрипт запуска Felix Hub на Render
+Просто запускает Gunicorn без блокирующих операций
 """
 
 import os
 import sys
-import shutil
 
-
-def start_gunicorn():
-    """Запуск Gunicorn с правильными параметрами"""
+def main():
     port = os.getenv('PORT', '8000')
-
-    # Диагностика окружения
-    print("=" * 60)
-    print("Felix Hub start diagnostics:")
-    print(f" CWD: {os.getcwd()}")
-    print(f" PYTHON: {sys.executable}")
-    print(f" PATH: {os.getenv('PATH')}")
-    print(f" PORT: {port}")
-    print("=" * 60)
-
-    # Проверим доступность gunicorn
-    gunicorn_path = shutil.which('gunicorn')
-    print(f" gunicorn found at: {gunicorn_path}")
-
-    # Формируем команду запуска через python -m gunicorn (надежнее в venv)
+    
+    print("="*60)
+    print(f"🚀 Запуск Felix Hub на порту {port}")
+    print("="*60)
+    
+    # Диагностическая информация
+    print(f"📂 CWD: {os.getcwd()}")
+    print(f"🐍 PYTHON: {sys.executable}")
+    print(f"🔌 PORT: {port}")
+    print("="*60)
+    
+    # Запускаем Gunicorn напрямую
+    # БД уже создана через init_render_db.py в buildCommand
+    # Миграции выполняются через run_migrations.py после деплоя (если нужно)
+    
     cmd = [
         sys.executable, '-m', 'gunicorn',
         'app:app',
@@ -35,15 +33,15 @@ def start_gunicorn():
         '--timeout', '120',
         '--log-level', 'info',
         '--access-logfile', '-',
-        '--error-logfile', '-',
+        '--error-logfile', '-'
     ]
-
-    print(f"🚀 Launching: {' '.join(cmd)}")
-    print("=" * 60)
-
-    # Передаем управление процессу gunicorn
-    os.execv(sys.executable, cmd)
-
+    
+    print(f"🚀 Команда: {' '.join(cmd)}")
+    print("="*60)
+    
+    # Запускаем Gunicorn (exec заменяет текущий процесс)
+    os.execvp(cmd[0], cmd)
 
 if __name__ == '__main__':
-    start_gunicorn()
+    main()
+
