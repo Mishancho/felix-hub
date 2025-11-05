@@ -6,8 +6,8 @@ services:
     region: frankfurt
     plan: free
     branch: main
-    buildCommand: pip install -r requirements.txt && python init_render_db.py
-    startCommand: python start_render.py
+    buildCommand: pip install -r requirements.txt
+    startCommand: python init_render_db.py && python start_render.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
