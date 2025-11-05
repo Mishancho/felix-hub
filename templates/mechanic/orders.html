@@ -477,7 +477,18 @@
                         <h4>{{ _('parts') }}:</h4>
                         <ul>
                             {% for part in order.selected_parts %}
-                            <li>{{ part }}</li>
+                                {% if part is mapping %}
+                                    {# Новый формат с количеством #}
+                                    <li>
+                                        {{ part.name }}
+                                        {% if part.quantity > 1 %}
+                                            <strong style="color: #667eea;">(x{{ part.quantity }})</strong>
+                                        {% endif %}
+                                    </li>
+                                {% else %}
+                                    {# Старый формат (просто строка) #}
+                                    <li>{{ part }}</li>
+                                {% endif %}
                             {% endfor %}
                         </ul>
                     </div>

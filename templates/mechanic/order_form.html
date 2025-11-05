@@ -170,6 +170,7 @@
             cursor: pointer;
             transition: all 0.2s;
             border: 2px solid transparent;
+            gap: 10px;
         }
 
         .checkbox-item:hover {
@@ -182,7 +183,6 @@
         }
 
         .checkbox-item input[type="checkbox"] {
-            margin-right: 10px;
             width: 20px;
             height: 20px;
             min-width: 20px;
@@ -191,6 +191,42 @@
             accent-color: #667eea;
             -webkit-appearance: checkbox;
             appearance: checkbox;
+        }
+        
+        .checkbox-item .part-name {
+            flex: 1;
+        }
+        
+        .checkbox-item .quantity-control {
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-item.checked .quantity-control {
+            display: flex;
+        }
+        
+        .quantity-control label {
+            font-size: 13px;
+            color: #666;
+            margin: 0;
+            font-weight: normal;
+        }
+        
+        .quantity-control input[type="number"] {
+            width: 60px;
+            padding: 6px 8px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .quantity-control input[type="number"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
         .radio-group {
@@ -275,10 +311,20 @@
             display: flex;
             gap: 10px;
             margin-bottom: 10px;
+            align-items: center;
         }
 
-        .manual-part-item input {
+        .manual-part-item input[type="text"] {
             flex: 1;
+        }
+        
+        .manual-part-item input[type="number"] {
+            width: 80px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            text-align: center;
         }
 
         .manual-part-item button {
@@ -408,8 +454,8 @@
         let manualPartCounter = 0;
         const currentLang = '{{ g.locale or "ru" }}';
         
-        // Сохраняем выбранные детали из всех категорий
-        let selectedPartsGlobal = [];
+        // Сохраняем выбранные детали из всех категорий с количеством
+        let selectedPartsGlobal = {}; // Формат: { 'Название детали': количество }
 
         // Загрузка каталога из API
         async function loadCatalog() {
@@ -450,7 +496,9 @@
                 item.className = 'checkbox-item';
                 
                 // Проверяем, была ли эта деталь уже выбрана
-                const isChecked = selectedPartsGlobal.includes(part);
+                const isChecked = selectedPartsGlobal.hasOwnProperty(part);
+                const quantity = selectedPartsGlobal[part] || 1;
+                
                 if (isChecked) {
                     item.classList.add('checked');
                 }
@@ -463,29 +511,45 @@
                            name="selected_parts" 
                            value="${part}"
                            ${isChecked ? 'checked' : ''}>
-                    <span>${part}</span>
+                    <span class="part-name">${part}</span>
+                    <div class="quantity-control">
+                        <label>{{ _('quantity') if _('quantity') != 'quantity' else 'Кол-во' }}:</label>
+                        <input type="number" 
+                               min="1" 
+                               max="999" 
+                               value="${quantity}"
+                               class="part-quantity"
+                               onclick="event.stopPropagation()">
+                    </div>
                 `;
                 partsList.appendChild(item);
                 
                 // Добавляем обработчик изменения чекбокса
                 const checkbox = item.querySelector('input[type="checkbox"]');
+                const quantityInput = item.querySelector('.part-quantity');
+                
                 checkbox.addEventListener('change', function() {
                     // Переключаем класс checked на родительском label
                     if (this.checked) {
                         item.classList.add('checked');
-                        // Добавляем в глобальный список, если еще нет
-                        if (!selectedPartsGlobal.includes(this.value)) {
-                            selectedPartsGlobal.push(this.value);
-                        }
+                        // Добавляем в глобальный объект с количеством
+                        selectedPartsGlobal[this.value] = parseInt(quantityInput.value) || 1;
                     } else {
                         item.classList.remove('checked');
-                        // Удаляем из глобального списка
-                        const index = selectedPartsGlobal.indexOf(this.value);
-                        if (index > -1) {
-                            selectedPartsGlobal.splice(index, 1);
-                        }
+                        // Удаляем из глобального объекта
+                        delete selectedPartsGlobal[this.value];
                     }
                     updatePartsCounter();
+                });
+                
+                // Обработчик изменения количества
+                quantityInput.addEventListener('change', function(e) {
+                    e.stopPropagation();
+                    if (checkbox.checked) {
+                        const qty = parseInt(this.value) || 1;
+                        this.value = Math.max(1, Math.min(999, qty));
+                        selectedPartsGlobal[checkbox.value] = this.value;
+                    }
                 });
             });
             updatePartsCounter();
@@ -496,7 +560,7 @@
             const counter = document.getElementById('partsCounter');
             if (counter) {
                 const manualCount = document.querySelectorAll('.manual-part-input').length;
-                const total = selectedPartsGlobal.length + manualCount;
+                const total = Object.keys(selectedPartsGlobal).length + manualCount;
                 counter.textContent = '{{ _("selected") if _("selected") != "selected" else "Выбрано" }}: ' + total;
             }
         }
@@ -511,6 +575,12 @@
                        class="manual-part-input" 
                        placeholder="{{ _('part_name') }}"
                        data-id="${manualPartCounter}">
+                <input type="number" 
+                       min="1" 
+                       max="999" 
+                       value="1"
+                       class="manual-part-quantity"
+                       placeholder="{{ _('quantity') if _('quantity') != 'quantity' else 'Кол-во' }}">
                 <button type="button" onclick="removeManualPart(this)">✕</button>
             `;
             container.appendChild(item);
@@ -529,17 +599,33 @@
 
             const alertContainer = document.getElementById('alert-container');
             
-            // Используем глобальный список выбранных деталей
-            const selectedParts = selectedPartsGlobal;
+            // Формируем массив деталей с количеством
+            const selectedParts = [];
+            
+            // Добавляем детали из каталога
+            for (const [partName, quantity] of Object.entries(selectedPartsGlobal)) {
+                selectedParts.push({
+                    name: partName,
+                    quantity: parseInt(quantity)
+                });
+            }
 
             // Добавляем ручные детали
-            const manualParts = Array.from(document.querySelectorAll('.manual-part-input'))
-                .map(input => input.value.trim())
-                .filter(val => val);
+            const manualPartInputs = document.querySelectorAll('.manual-part-input');
+            const manualPartQuantities = document.querySelectorAll('.manual-part-quantity');
+            
+            manualPartInputs.forEach((input, index) => {
+                const partName = input.value.trim();
+                if (partName) {
+                    const quantity = parseInt(manualPartQuantities[index].value) || 1;
+                    selectedParts.push({
+                        name: partName,
+                        quantity: quantity
+                    });
+                }
+            });
 
-            const allParts = [...selectedParts, ...manualParts];
-
-            if (allParts.length === 0) {
+            if (selectedParts.length === 0) {
                 alertContainer.innerHTML = `
                     <div class="alert alert-error">
                         {{ _('select_at_least_one_part') }}
@@ -551,7 +637,7 @@
             const formData = {
                 plate_number: document.getElementById('plate_number').value,
                 category: document.getElementById('category').value,
-                selected_parts: allParts,
+                selected_parts: selectedParts,
                 is_original: document.querySelector('input[name="is_original"]:checked').value === 'true',
                 comment: document.getElementById('comment').value
             };
@@ -574,11 +660,11 @@
                         </div>
                     `;
                     
-                    // Очистка формы и глобального списка
+                    // Очистка формы и глобального объекта
                     document.getElementById('orderForm').reset();
                     document.getElementById('partsList').innerHTML = '<p style="color: #999; font-size: 14px;">{{ _("select_category_first") }}</p>';
                     document.getElementById('manualParts').innerHTML = '';
-                    selectedPartsGlobal = []; // Очищаем глобальный список
+                    selectedPartsGlobal = {}; // Очищаем глобальный объект
 
                     // Перенаправление через 2 секунды
                     setTimeout(() => {

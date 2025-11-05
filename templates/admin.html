@@ -492,7 +492,16 @@
                         <td>
                             <div class="parts-list">
                                 <ul>
-                                    ${order.selected_parts.map(p => `<li>${p}</li>`).join('')}
+                                    ${order.selected_parts.map(p => {
+                                        if (typeof p === 'object' && p.name) {
+                                            // Новый формат с количеством
+                                            const qty = p.quantity > 1 ? ` <strong style="color: #667eea;">(x${p.quantity})</strong>` : '';
+                                            return `<li>${p.name}${qty}</li>`;
+                                        } else {
+                                            // Старый формат (просто строка)
+                                            return `<li>${p}</li>`;
+                                        }
+                                    }).join('')}
                                 </ul>
                                 ${order.is_original ? '🔧 Оригинал' : '💰 Аналог'}
                             </div>

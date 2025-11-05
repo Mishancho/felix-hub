@@ -160,7 +160,22 @@ def notify_admin_new_order(order):
     if not TELEGRAM_ADMIN_CHAT_ID:
         return
     
-    parts_list = '\n'.join([f"• {part}" for part in order.selected_parts])
+    # Формируем список деталей с количеством
+    parts_list = []
+    for part in order.selected_parts:
+        if isinstance(part, dict):
+            # Новый формат с количеством
+            name = part.get('name', '')
+            quantity = part.get('quantity', 1)
+            if quantity > 1:
+                parts_list.append(f"• {name} <b>(x{quantity})</b>")
+            else:
+                parts_list.append(f"• {name}")
+        else:
+            # Старый формат (просто строка)
+            parts_list.append(f"• {part}")
+    
+    parts_text = '\n'.join(parts_list)
     
     message = f"""🔔 <b>Новый заказ от {order.mechanic_name}</b>
 
@@ -169,7 +184,7 @@ def notify_admin_new_order(order):
 📦 Категория: {order.category}
 
 <b>Детали:</b>
-{parts_list}
+{parts_text}
 
 {'🔧 Оригинал' if order.is_original else '💰 Аналог'}
 ⏰ {order.created_at.strftime('%d.%m.%Y %H:%M')}
@@ -403,6 +418,25 @@ def submit_order():
         if not data.get('selected_parts') or len(data['selected_parts']) == 0:
             return jsonify({'error': 'Выберите хотя бы одну деталь'}), 400
         
+        # Нормализация формата selected_parts
+        # Поддерживаем как старый формат (массив строк), так и новый (массив объектов с количеством)
+        selected_parts = data['selected_parts']
+        normalized_parts = []
+        
+        for part in selected_parts:
+            if isinstance(part, str):
+                # Старый формат: просто строка
+                normalized_parts.append({
+                    'name': part,
+                    'quantity': 1
+                })
+            elif isinstance(part, dict):
+                # Новый формат: объект с name и quantity
+                normalized_parts.append({
+                    'name': part.get('name', ''),
+                    'quantity': int(part.get('quantity', 1))
+                })
+        
         # Создание нового заказа
         order = Order(
             mechanic_id=mechanic_id,
@@ -410,7 +444,7 @@ def submit_order():
             telegram_id=telegram_id,
             category=data['category'],
             plate_number=data['plate_number'].strip().upper(),
-            selected_parts=data['selected_parts'],
+            selected_parts=normalized_parts,  # Сохраняем в новом формате
             is_original=data.get('is_original', False),
             photo_url=data.get('photo_url'),
             comment=data.get('comment'),
@@ -1035,16 +1069,7 @@ def create_part():
         if not data.get('category'):
             return jsonify({'error': 'Категория обязательна'}), 400
         
-        # Проверка на дубликаты
-        existing = Part.query.filter_by(
-            name_ru=data['name_ru'],
-            category=data['category']
-        ).first()
-        
-        if existing:
-            return jsonify({'error': 'Такая запчасть уже существует в этой категории'}), 400
-        
-        # Создание запчасти
+        # Создание запчасти (разрешаем дубликаты)
         part = Part(
             name_ru=data['name_ru'].strip(),
             name_en=data.get('name_en', '').strip() if data.get('name_en') else None,
@@ -1089,16 +1114,6 @@ def update_part(part_id):
         data = request.get_json()
         
         if 'name_ru' in data:
-            # Проверка на дубликаты при изменении имени
-            if data['name_ru'] != part.name_ru:
-                existing = Part.query.filter_by(
-                    name_ru=data['name_ru'],
-                    category=data.get('category', part.category)
-                ).first()
-                
-                if existing:
-                    return jsonify({'error': 'Такая запчасть уже существует в этой категории'}), 400
-            
             part.name_ru = data['name_ru'].strip()
             part.name = data['name_ru'].strip()  # Обновляем старое поле для обратной совместимости
         
@@ -1194,16 +1209,6 @@ def bulk_create_parts():
         
         for item in parts_data:
             try:
-                # Проверка на существование
-                existing = Part.query.filter_by(
-                    name_ru=item.get('name_ru', item.get('name')),
-                    category=item['category']
-                ).first()
-                
-                if existing:
-                    errors.append(f"Запчасть '{item.get('name_ru', item.get('name'))}' уже существует в категории '{item['category']}'")
-                    continue
-                
                 name_ru = item.get('name_ru', item.get('name', '')).strip()
                 
                 part = Part(
@@ -1260,16 +1265,6 @@ def import_default_catalog():
                 db.session.add(cat)
             
             for idx, part_name in enumerate(parts):
-                # Проверка на существование
-                existing = Part.query.filter_by(
-                    name_ru=part_name,
-                    category=category
-                ).first()
-                
-                if existing:
-                    skipped.append(f"{category} - {part_name}")
-                    continue
-                
                 part = Part(
                     name_ru=part_name,
                     name=part_name,  # Старое поле для обратной совместимости
