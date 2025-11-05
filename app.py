@@ -91,6 +91,9 @@ def inject_category_translator():
 @app.before_request
 def before_request():
     """Выполняется перед каждым запросом"""
+    # Ленивая инициализация БД при первом запросе
+    ensure_db_initialized()
+    
     g.locale = get_locale()
     
     # Определяем направление текста (RTL для иврита)
@@ -257,6 +260,11 @@ def print_receipt(order):
     return receipt
 
 # Маршруты приложения
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Render - doesn't require DB"""
+    return {'status': 'ok', 'service': 'felix-hub'}, 200
 
 @app.route('/')
 def index():
@@ -1613,14 +1621,26 @@ def update_category_translations():
     except Exception as e:
         print(f"  ⚠️  Ошибка обновления переводов: {e}")
 
-# Инициализация при запуске через Gunicorn
+# Флаг для однократной инициализации БД
+_db_initialized = False
+
+def ensure_db_initialized():
+    """Убедиться что БД инициализирована (ленивая инициализация)"""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            init_db()
+            _db_initialized = True
+        except Exception as e:
+            print(f"⚠️  Отложенная инициализация БД не удалась: {e}")
+
+# Инициализация при запуске через Gunicorn (но не блокирующая)
 try:
+    # Пробуем инициализировать БД, но не падаем если не получается
     init_db()
 except Exception as e:
-    print(f"⚠️  Ошибка инициализации БД при загрузке приложения: {e}")
-    print("⚠️  Приложение запустится, но БД может быть не инициализирована")
-    import traceback
-    traceback.print_exc()
+    print(f"⚠️  Инициализация БД при загрузке приложения отложена: {e}")
+    print("⚠️  БД будет инициализирована при первом запросе")
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
