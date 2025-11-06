@@ -758,3 +758,35 @@ msgstr "Mechanic deactivated"
 msgid "error_loading_data"
 msgstr "Error loading data"
 
+
+# Login Form
+msgid "Система управления заказами СТО"
+msgstr "Auto Service Order Management System"
+
+msgid "Имя пользователя"
+msgstr "Username"
+
+msgid "Введите имя пользователя"
+msgstr "Enter username"
+
+msgid "Пароль"
+msgstr "Password"
+
+msgid "Введите пароль"
+msgstr "Enter password"
+
+msgid "Войти"
+msgstr "Login"
+
+msgid "Панель администратора"
+msgstr "Admin Panel"
+
+# Flash messages
+msgid "Ваш аккаунт деактивирован. Обратитесь к администратору"
+msgstr "Your account is deactivated. Please contact administrator"
+
+msgid "Добро пожаловать, %(name)s!"
+msgstr "Welcome, %(name)s!"
+
+msgid "Неверное имя пользователя или пароль"
+msgstr "Invalid username or password"

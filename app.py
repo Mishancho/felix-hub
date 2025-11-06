@@ -477,21 +477,23 @@ def mechanic_login():
         
         if mechanic and mechanic.check_password(password):
             if not mechanic.is_active:
-                flash('Ваш аккаунт деактивирован. Обратитесь к администратору', 'error')
-                return redirect(url_for('mechanic_login'))
+                flash(_l('Ваш аккаунт деактивирован. Обратитесь к администратору'), 'error')
+                return redirect(url_for('index'))
             
             login_user(mechanic, remember=remember)
             mechanic.update_last_login()
             
-            flash(f'Добро пожаловать, {mechanic.full_name}!', 'success')
+            flash(_l('Добро пожаловать, %(name)s!', name=mechanic.full_name), 'success')
             
             # Перенаправление на запрошенную страницу или на dashboard
             next_page = request.args.get('next')
             return redirect(next_page if next_page else url_for('mechanic_dashboard'))
         else:
-            flash('Неверное имя пользователя или пароль', 'error')
+            flash(_l('Неверное имя пользователя или пароль'), 'error')
+            return redirect(url_for('index'))
     
-    return render_template('mechanic/login.html')
+    # GET запрос - перенаправляем на главную
+    return redirect(url_for('index'))
 
 
 @app.route('/mechanic/logout')

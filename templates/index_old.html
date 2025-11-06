@@ -76,7 +76,7 @@
         
         .subtitle {
             color: #666;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             font-size: 1.1em;
         }
         
@@ -85,7 +85,7 @@
             gap: 10px;
             justify-content: center;
             margin-bottom: 30px;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;
         }
         
         .lang-flag {
@@ -94,15 +94,8 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1.5em;
+            font-size: 1.3em;
             background: white;
-            line-height: 1;
-            order: 0;
-        }
-        
-        .lang-flag span {
-            display: inline-block;
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
         }
         
         .lang-flag:hover {
@@ -113,7 +106,6 @@
         .lang-flag.active {
             border-color: #667eea;
             background: #f0f4ff;
-            box-shadow: 0 0 0 1px #667eea;
         }
         
         .login-form {
@@ -221,11 +213,6 @@
             .subtitle {
                 font-size: 1em;
             }
-            
-            .lang-flag {
-                font-size: 1.3em;
-                padding: 6px 12px;
-            }
         }
     </style>
 </head>
@@ -240,77 +227,30 @@
         <div class="container">
             <div class="logo">🔧</div>
             <h2>Felix Hub 2.1</h2>
-            <p class="subtitle">{{ _('Система управления заказами СТО') }}</p>
+            <p class="subtitle">Система управления заказами СТО</p>
+        
+        <div class="lang-buttons">
+            <a href="/mechanic?lang=ru" class="lang-btn ru">
+                <span class="flag">🇷🇺</span>
+                <span>Русский</span>
+            </a>
             
-            <!-- Переключатель языков -->
-            <div class="lang-buttons">
-                <button type="button" class="lang-flag {% if g.locale == 'ru' %}active{% endif %}" onclick="switchLanguage('ru')" title="Русский">
-                    <span>🇷🇺</span>
-                </button>
-                <button type="button" class="lang-flag {% if g.locale == 'en' %}active{% endif %}" onclick="switchLanguage('en')" title="English">
-                    <span>🇬🇧</span>
-                </button>
-                <button type="button" class="lang-flag {% if g.locale == 'he' %}active{% endif %}" onclick="switchLanguage('he')" title="עברית">
-                    <span>🇮🇱</span>
-                </button>
+            <a href="/mechanic?lang=en" class="lang-btn en">
+                <span class="flag">🇬🇧</span>
+                <span>English</span>
+            </a>
+            
+            <a href="/mechanic?lang=he" class="lang-btn he">
+                <span class="flag">��</span>
+                <span>עברית</span>
+            </a>
             </div>
             
-            <!-- Форма входа -->
-            <form class="login-form" method="POST" action="/mechanic/login">
-                {% if error %}
-                <div class="error-message">{{ error }}</div>
-                {% endif %}
-                
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                        <div class="error-message">{{ message }}</div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-                
-                <div class="form-group">
-                    <label for="username">{{ _('Имя пользователя') }}</label>
-                    <input type="text" id="username" name="username" required 
-                           placeholder="{{ _('Введите имя пользователя') }}">
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">{{ _('Пароль') }}</label>
-                    <input type="password" id="password" name="password" required 
-                           placeholder="{{ _('Введите пароль') }}">
-                </div>
-                
-                <button type="submit" class="login-btn">{{ _('Войти') }}</button>
-            </form>
-            
             <div class="admin-link">
-                <a href="/admin" class="admin-btn">👨‍💼 {{ _('Панель администратора') }}</a>
+                <a href="/admin" class="admin-btn">👨‍💼 Панель администратора</a>
             </div>
         </div>
     </div>
-    
-    <script>
-        function switchLanguage(lang) {
-            // Отправляем AJAX запрос для смены языка
-            fetch('/set_language/' + lang, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Перезагружаем страницу для применения нового языка
-                    window.location.reload();
-                }
-            })
-            .catch(error => {
-                console.error('Error switching language:', error);
-            });
-        }
-    </script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
 </body>
 </html>
