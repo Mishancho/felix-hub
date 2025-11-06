@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, g
 from flask_login import login_user, logout_user, login_required, current_user
@@ -7,6 +8,7 @@ from flask_babel import Babel, gettext, lazy_gettext as _l
 from werkzeug.utils import secure_filename
 import requests
 from dotenv import load_dotenv
+from migrate_parts_translations import find_translation
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -177,6 +179,40 @@ PARTS_CATALOG = {
         'Щётки стеклоочистителя зад'
     ]
 }
+
+# ============================================================================
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ПЕРЕВОДАМИ
+# ============================================================================
+
+def apply_auto_translations(part, part_name_ru):
+    """
+    Автоматически применить переводы к запчасти, если они не указаны.
+    
+    Args:
+        part: Объект Part
+        part_name_ru: Название запчасти на русском языке
+    
+    Returns:
+        bool: True если переводы были применены, False в противном случае
+    """
+    if not part.name_en or not part.name_he:
+        translation = find_translation(part_name_ru)
+        if translation:
+            if not part.name_en:
+                part.name_en = translation.get('en')
+            if not part.name_he:
+                part.name_he = translation.get('he')
+            
+            app.logger.info(
+                f"✅ Автоматически добавлен перевод для '{part_name_ru}': "
+                f"EN='{part.name_en}', HE='{part.name_he}'"
+            )
+            return True
+    return False
+
+# ============================================================================
+# ФУНКЦИИ ДЛЯ РАБОТЫ С TELEGRAM
+# ============================================================================
 
 # Функции для работы с Telegram
 def send_telegram_message(chat_id, text):
@@ -1207,15 +1243,7 @@ def create_part():
         )
         
         # Автоматически добавляем переводы, если их нет
-        if not part.name_en or not part.name_he:
-            from migrate_parts_translations import find_translation
-            translation = find_translation(data['name_ru'])
-            if translation:
-                if not part.name_en:
-                    part.name_en = translation.get('en')
-                if not part.name_he:
-                    part.name_he = translation.get('he')
-                print(f"✅ Автоматически добавлен перевод для '{data['name_ru']}': EN='{part.name_en}', HE='{part.name_he}'")
+        apply_auto_translations(part, data['name_ru'])
         
         db.session.add(part)
         db.session.commit()
@@ -1359,15 +1387,7 @@ def bulk_create_parts():
                 )
                 
                 # Автоматически добавляем переводы, если их нет
-                if not part.name_en or not part.name_he:
-                    from migrate_parts_translations import find_translation
-                    translation = find_translation(name_ru)
-                    if translation:
-                        if not part.name_en:
-                            part.name_en = translation.get('en')
-                        if not part.name_he:
-                            part.name_he = translation.get('he')
-                        print(f"✅ Автоматически добавлен перевод для '{name_ru}': EN='{part.name_en}', HE='{part.name_he}'")
+                apply_auto_translations(part, name_ru)
                 
                 db.session.add(part)
                 created.append(part)
@@ -1419,15 +1439,7 @@ def import_default_catalog():
                 )
                 
                 # Автоматически добавляем переводы, если их нет
-                if not part.name_en or not part.name_he:
-                    from migrate_parts_translations import find_translation
-                    translation = find_translation(part_name)
-                    if translation:
-                        if not part.name_en:
-                            part.name_en = translation.get('en')
-                        if not part.name_he:
-                            part.name_he = translation.get('he')
-                        print(f"✅ Автоматически добавлен перевод для '{part_name}': EN='{part.name_en}', HE='{part.name_he}'")
+                apply_auto_translations(part, part_name)
                 
                 db.session.add(part)
                 created.append(part)
