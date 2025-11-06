@@ -1156,10 +1156,6 @@ def get_parts_categories():
         parts_categories = db.session.query(Part.category).distinct().order_by(Part.category).all()
         parts_categories = [cat[0] for cat in parts_categories]
         
-        # Если категорий нет в БД, используем дефолтные
-        if not parts_categories:
-            parts_categories = list(PARTS_CATALOG.keys())
-        
         return jsonify(parts_categories)
         
     except Exception as e:
@@ -1201,10 +1197,6 @@ def get_parts_catalog():
                 'id': part.id,
                 'name': part.get_name(lang)
             })
-        
-        # Если каталог пуст, используем дефолтный (без ID для обратной совместимости)
-        if not catalog:
-            catalog = PARTS_CATALOG
         
         return jsonify(catalog)
         
