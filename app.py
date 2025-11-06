@@ -7,6 +7,7 @@ from flask_babel import Babel, gettext, lazy_gettext as _l
 from werkzeug.utils import secure_filename
 import requests
 from dotenv import load_dotenv
+from migrate_parts_translations import find_translation
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -177,6 +178,40 @@ PARTS_CATALOG = {
         'Щётки стеклоочистителя зад'
     ]
 }
+
+# ============================================================================
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ПЕРЕВОДАМИ
+# ============================================================================
+
+def apply_auto_translations(part, part_name_ru):
+    """
+    Автоматически применить переводы к запчасти, если они не указаны.
+    
+    Args:
+        part: Объект Part
+        part_name_ru: Название запчасти на русском языке
+    
+    Returns:
+        bool: True если переводы были применены, False в противном случае
+    """
+    if not part.name_en or not part.name_he:
+        translation = find_translation(part_name_ru)
+        if translation:
+            if not part.name_en:
+                part.name_en = translation.get('en')
+            if not part.name_he:
+                part.name_he = translation.get('he')
+            
+            app.logger.info(
+                f"✅ Автоматически добавлен перевод для '{part_name_ru}': "
+                f"EN='{part.name_en}', HE='{part.name_he}'"
+            )
+            return True
+    return False
+
+# ============================================================================
+# ФУНКЦИИ ДЛЯ РАБОТЫ С TELEGRAM
+# ============================================================================
 
 # Функции для работы с Telegram
 def send_telegram_message(chat_id, text):
@@ -1206,6 +1241,9 @@ def create_part():
             sort_order=data.get('sort_order', 0)
         )
         
+        # Автоматически добавляем переводы, если их нет
+        apply_auto_translations(part, data['name_ru'])
+        
         db.session.add(part)
         db.session.commit()
         
@@ -1347,6 +1385,9 @@ def bulk_create_parts():
                     sort_order=item.get('sort_order', 0)
                 )
                 
+                # Автоматически добавляем переводы, если их нет
+                apply_auto_translations(part, name_ru)
+                
                 db.session.add(part)
                 created.append(part)
                 
@@ -1395,6 +1436,9 @@ def import_default_catalog():
                     is_active=True,
                     sort_order=idx
                 )
+                
+                # Автоматически добавляем переводы, если их нет
+                apply_auto_translations(part, part_name)
                 
                 db.session.add(part)
                 created.append(part)
