@@ -318,22 +318,25 @@
     <link rel="stylesheet" href="/static/css/language-switcher.css">
 </head>
 <body>
-    <!-- Переключатель языка -->
-    <div id="languageSwitcher" class="language-switcher">
-        <div class="lang-selector">
-            <span class="lang-icon">🌍</span>
-            <select id="langSelect" class="lang-select" onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)">
-                <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
-                <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
-                <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
-            </select>
-        </div>
-    </div>
     
     <div class="header">
         <div class="header-content">
             <h1>👨‍💼 {{ _('admin_panel_title') }}</h1>
             <div class="header-actions">
+                <!-- Переключатель языка -->
+                <div class="language-switcher">
+                    <div class="lang-buttons">
+                        <a href="/set_language/ru?redirect={{ request.path }}" 
+                           class="lang-btn {{ 'active' if g.locale == 'ru' else '' }}" 
+                           title="Русский">🇷🇺</a>
+                        <a href="/set_language/en?redirect={{ request.path }}" 
+                           class="lang-btn {{ 'active' if g.locale == 'en' else '' }}" 
+                           title="English">🇬🇧</a>
+                        <a href="/set_language/he?redirect={{ request.path }}" 
+                           class="lang-btn {{ 'active' if g.locale == 'he' else '' }}" 
+                           title="עברית">🇮🇱</a>
+                    </div>
+                </div>
                 <a href="/" class="btn btn-white">← {{ _('home') }}</a>
                 <a href="/admin/logout" class="btn btn-white">{{ _('logout') }}</a>
             </div>

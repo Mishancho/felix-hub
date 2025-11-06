@@ -568,7 +568,37 @@ textarea {
    ======================================== */
 
 @media (max-width: 768px) {
+    /* Переключатель языка в шапке */
     .language-switcher {
+        order: -1; /* Первым в header-actions */
+        margin-right: 5px;
+    }
+    
+    .lang-buttons {
+        gap: 5px !important;
+    }
+    
+    .lang-btn {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 15px !important;
+        padding: 0 !important;
+        border-width: 1.5px !important;
+    }
+    
+    /* Скрываем title на мобильных */
+    .lang-btn[title]::after {
+        display: none !important;
+    }
+    
+    /* Адаптируем расположение в header-actions */
+    .header-actions {
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    /* Для старого стиля (на всякий случай) */
+    .language-switcher.old-style {
         top: 8px !important;
         right: 8px !important;
         z-index: 1001;
@@ -593,6 +623,24 @@ textarea {
     .lang-icon {
         font-size: 0.9em !important;
         margin-right: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .lang-buttons {
+        gap: 4px !important;
+    }
+    
+    .lang-btn {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 13px !important;
+    }
+    
+    /* На очень маленьких экранах уменьшаем отступы в header */
+    .page-header-content,
+    .header-content {
+        gap: 10px !important;
     }
 }
 

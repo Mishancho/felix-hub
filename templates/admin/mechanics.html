@@ -354,19 +354,25 @@
     </style>
 </head>
 <body>
-    <!-- Language Switcher -->
-    <div id="languageSwitcher" class="language-switcher">
-        <select onchange="window.location.href='/set_language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)" class="lang-select">
-            <option value="ru" {{ 'selected' if g.locale == 'ru' else '' }}>🇷🇺 Русский</option>
-            <option value="en" {{ 'selected' if g.locale == 'en' else '' }}>🇬🇧 English</option>
-            <option value="he" {{ 'selected' if g.locale == 'he' else '' }}>🇮🇱 עברית</option>
-        </select>
-    </div>
     
     <div class="page-header">
         <div class="page-header-content">
             <h1>👥 {{ _('manage_mechanics') if _('manage_mechanics') != 'manage_mechanics' else 'Управление механиками' }}</h1>
             <div class="header-actions">
+                <!-- Переключатель языка -->
+                <div class="language-switcher">
+                    <div class="lang-buttons">
+                        <a href="/set_language/ru?redirect={{ request.path }}" 
+                           class="lang-btn {{ 'active' if g.locale == 'ru' else '' }}" 
+                           title="Русский">🇷🇺</a>
+                        <a href="/set_language/en?redirect={{ request.path }}" 
+                           class="lang-btn {{ 'active' if g.locale == 'en' else '' }}" 
+                           title="English">🇬🇧</a>
+                        <a href="/set_language/he?redirect={{ request.path }}" 
+                           class="lang-btn {{ 'active' if g.locale == 'he' else '' }}" 
+                           title="עברית">🇮🇱</a>
+                    </div>
+                </div>
                 <a href="{{ url_for('admin') }}" class="btn btn-white">← {{ _('home') if _('home') != 'home' else 'Главная' }}</a>
                 <a href="{{ url_for('admin_logout') }}" class="btn btn-white">{{ _('logout') if _('logout') != 'logout' else 'Выход' }}</a>
             </div>

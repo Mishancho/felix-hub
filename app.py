@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import Babel, gettext, lazy_gettext as _l
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 import requests
 from dotenv import load_dotenv
 from migrate_parts_translations import find_translation
@@ -13,6 +14,17 @@ from migrate_parts_translations import find_translation
 load_dotenv()
 
 app = Flask(__name__)
+
+# Исправление для работы за прокси (Render, nginx и т.д.)
+# Это важно для корректной работы url_for() на продакшене
+app.wsgi_app = ProxyFix(
+    app.wsgi_app, 
+    x_for=1, 
+    x_proto=1, 
+    x_host=1, 
+    x_prefix=1
+)
+
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Настройки Babel для многоязычности
@@ -39,6 +51,11 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Режим обратной совместимости (анонимные заказы)
 app.config['ALLOW_ANONYMOUS_ORDERS'] = os.getenv('ALLOW_ANONYMOUS_ORDERS', 'true').lower() == 'true'
+
+# Настройки для статических файлов на продакшене
+# Добавляем версионирование для предотвращения кэширования старых файлов
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0 if app.debug else 31536000  # 1 год для продакшена
+app.config['TEMPLATES_AUTO_RELOAD'] = app.debug
 
 # Создание папки для загрузок
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -88,6 +105,22 @@ def inject_category_translator():
         return category_name
     
     return dict(get_category_name=get_category_name)
+
+@app.context_processor
+def inject_cache_buster():
+    """Добавляем версионирование для статических файлов (кэш-бастинг)"""
+    import time
+    
+    # Используем время старта приложения как версию
+    # В продакшене это будет обновляться при каждом деплое
+    if not hasattr(app, '_static_version'):
+        app._static_version = str(int(time.time()))
+    
+    def static_url(filename):
+        """Генерирует URL для статического файла с версией"""
+        return url_for('static', filename=filename, v=app._static_version)
+    
+    return dict(static_url=static_url)
 
 @app.before_request
 def before_request():
