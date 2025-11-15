@@ -417,9 +417,12 @@
                     <div class="add-part-box" style="margin-top:10px;">
                         <button class="btn btn-secondary" onclick="toggleAddPart({{ order.id }}, '{{ order.category }}')">+ Добавить деталь</button>
                         <div id="addPartForm-{{ order.id }}" style="display:none; margin-top:8px;">
-                            <select id="addPartSelect-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
-                            <input type="number" id="addPartQty-{{ order.id }}" min="1" value="1" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px; width:80px; margin-left:8px;">
-                            <button class="btn btn-primary" style="margin-left:8px;" onclick="submitAddPart({{ order.id }})">Добавить</button>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                                <select id="addPartCategory-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
+                                <select id="addPartSelect-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
+                                <input type="number" id="addPartQty-{{ order.id }}" min="1" value="1" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px; width:80px;">
+                                <button class="btn btn-primary" onclick="submitAddPart({{ order.id }})">Добавить</button>
+                            </div>
                         </div>
                     </div>
                     {% endif %}
@@ -445,20 +448,61 @@
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
     <script>
+        window.addPartCategoryCache = window.addPartCategoryCache || {};
         async function toggleAddPart(orderId, category) {
             const form = document.getElementById(`addPartForm-${orderId}`);
-            const select = document.getElementById(`addPartSelect-${orderId}`);
+            const partSelect = document.getElementById(`addPartSelect-${orderId}`);
+            const catSelect = document.getElementById(`addPartCategory-${orderId}`);
             if (form.style.display === 'none') {
                 try {
                     const lang = '{{ g.locale }}';
-                    const response = await fetch(`/api/parts?category=${encodeURIComponent(category)}&active_only=true&lang=${lang}`);
-                    const parts = await response.json();
-                    select.innerHTML = parts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-                } catch (e) {}
+                    // Получаем список категорий: локализованный и сырой
+                    const [rawRes, locRes] = await Promise.all([
+                        fetch(`/api/categories`),
+                        fetch(`/api/categories?lang=${lang}`)
+                    ]);
+                    const rawCats = await rawRes.json();
+                    const locCats = await locRes.json();
+                    const byIdRaw = {}; rawCats.forEach(c => byIdRaw[c.id] = c);
+                    const byIdLoc = {}; locCats.forEach(c => byIdLoc[c.id] = c);
+                    window.addPartCategoryCache[orderId] = { byIdRaw, byIdLoc };
+
+                    // Определяем raw категорию для заказа
+                    let rawCategory = category;
+                    const match = rawCats.find(c => c.name === category || c.name_ru === category || c.name_en === category || c.name_he === category);
+                    if (match) rawCategory = match.name;
+
+                    // Заполняем селект категорий локализованными названиями
+                    catSelect.innerHTML = locCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                    if (match && byIdLoc[match.id]) {
+                        catSelect.value = String(match.id);
+                    }
+
+                    // Загружаем детали для выбранной категории
+                    await loadPartsForCategory(orderId, rawCategory);
+                } catch (e) {
+                    partSelect.innerHTML = '';
+                }
                 form.style.display = 'block';
+                // Подписка на изменение категории
+                catSelect.onchange = async () => {
+                    const cache = window.addPartCategoryCache[orderId];
+                    const id = parseInt(catSelect.value);
+                    const rawName = cache && cache.byIdRaw[id] ? cache.byIdRaw[id].name : null;
+                    await loadPartsForCategory(orderId, rawName || catSelect.options[catSelect.selectedIndex].text);
+                };
             } else {
                 form.style.display = 'none';
             }
+        }
+
+        async function loadPartsForCategory(orderId, rawCategory) {
+            const lang = '{{ g.locale }}';
+            const partSelect = document.getElementById(`addPartSelect-${orderId}`);
+            if (!rawCategory) { partSelect.innerHTML = ''; return; }
+            const resp = await fetch(`/api/parts?category=${encodeURIComponent(rawCategory)}&active_only=true&lang=${lang}`);
+            const parts = await resp.json();
+            partSelect.innerHTML = parts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
         }
         async function submitAddPart(orderId) {
             const select = document.getElementById(`addPartSelect-${orderId}`);
