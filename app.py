@@ -341,6 +341,25 @@ def notify_mechanic_order_ready(order):
     
     send_telegram_message(telegram_id, message)
 
+def notify_admin_part_added(order, part_entry):
+    if not TELEGRAM_ADMIN_CHAT_ID:
+        return
+    quantity = part_entry.get('quantity', 1)
+    name = part_entry.get('name', '')
+    if 'part_id' in part_entry and part_entry.get('part_id'):
+        part_obj = Part.query.get(part_entry.get('part_id'))
+        if part_obj:
+            name = part_obj.get_name('ru')
+    category_obj = Category.query.filter_by(name=order.category).first()
+    category_name = category_obj.get_name('ru') if category_obj else order.category
+    qty_text = f" (x{quantity})" if quantity and quantity > 1 else ''
+    message = f"""➕ Добавлена запчасть к заказу №{order.id}
+🚗 Гос номер: {order.plate_number}
+📦 Категория: {category_name}
+• {name}{qty_text}
+👨‍🔧 Механик: {order.mechanic_name}"""
+    send_telegram_message(TELEGRAM_ADMIN_CHAT_ID, message)
+
 def validate_plate_number(plate_number):
     """Валидация формата гос номера"""
     # Примеры допустимых форматов: 123-45-678, A123BC77, В456СТ199
@@ -765,6 +784,43 @@ def update_order(order_id):
             'order': order.to_dict()
         })
         
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/orders/<int:order_id>/add-part', methods=['POST'])
+@mechanic_required
+def add_part_to_order(order_id):
+    try:
+        order = Order.query.get_or_404(order_id)
+        if order.mechanic_id and order.mechanic_id != current_user.id:
+            return jsonify({'error': 'Forbidden'}), 403
+        data = request.get_json() or {}
+        part_id = data.get('part_id')
+        name = data.get('name')
+        quantity = int(data.get('quantity', 1))
+        if not name and not part_id:
+            return jsonify({'error': 'Укажите part_id или name'}), 400
+        entry = {
+            'name': name or '',
+            'quantity': quantity if quantity > 0 else 1,
+            'added_by_mechanic': True,
+            'added_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        if part_id:
+            part = Part.query.get(part_id)
+            if not part:
+                return jsonify({'error': 'Запчасть не найдена'}), 404
+            entry['part_id'] = part.id
+            if not name:
+                entry['name'] = part.get_name('ru')
+        if not isinstance(order.selected_parts, list):
+            order.selected_parts = []
+        order.selected_parts.append(entry)
+        order.updated_at = datetime.utcnow()
+        db.session.commit()
+        notify_admin_part_added(order, entry)
+        return jsonify({'success': True, 'order': order.to_dict(lang='ru')})
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

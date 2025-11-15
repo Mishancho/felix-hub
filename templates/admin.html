@@ -241,6 +241,16 @@
             background: #f8d7da;
             color: #721c24;
         }
+        .added-badge {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background: #e6fffa;
+            color: #0b7285;
+            font-weight: 700;
+            font-size: 0.8em;
+        }
         
         .action-buttons {
             display: flex;
@@ -524,19 +534,20 @@
                                     ${order.selected_parts.map(p => {
                                         if (typeof p === 'object' && p.name) {
                                             const qty = p.quantity > 1 ? ` <strong style="color: #667eea;">(x${p.quantity})</strong>` : '';
-                                            return `<li>${escapeHtml(p.name)}${qty}</li>`;
+                                            const added = p.added_by_mechanic ? ' <span class="added-badge">➕</span>' : '';
+                                            return `<li>${escapeHtml(p.name)}${qty}${added}</li>`;
                                         } else {
                                             return `<li>${escapeHtml(p)}</li>`;
                                         }
                                     }).join('')}
                                 </ul>
-                                ${order.is_original 
-                                    ? '<span class="type-badge type-original">ОРИГИНАЛ</span>' 
-                                    : '<span class="type-badge type-analog">АНАЛОГ</span>'}
-                                ${order.comment ? `<div style="margin-top:8px; padding:10px; background:#fff3cd; color:#856404; border-radius:8px;">
-                                    <strong>💬 ${`{{ _('comment') }}`}: </strong>
-                                    <span>${escapeHtml(order.comment)}</span>
-                                </div>` : ''}
+                                    ${order.is_original 
+                                        ? '<span class="type-badge type-original">ОРИГИНАЛ</span>' 
+                                        : '<span class="type-badge type-analog">АНАЛОГ</span>'}
+                                    ${order.comment ? `<div style="margin-top:8px; padding:10px; background:#fff3cd; color:#856404; border-radius:8px;">
+                                        <strong>💬 ${`{{ _('comment') }}`}: </strong>
+                                        <span>${escapeHtml(order.comment)}</span>
+                                    </div>` : ''}
                             </div>
                         </td>
                         <td style="max-width: 280px; white-space: break-spaces; word-break: break-word;">

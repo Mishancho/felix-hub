@@ -297,26 +297,49 @@ class Order(db.Model):
             if isinstance(part, dict):
                 part_id = part.get('part_id')
                 quantity = part.get('quantity', 1)
+                added_flag = part.get('added_by_mechanic')
+                added_at = part.get('added_at')
                 
                 # Если есть part_id, получаем название на нужном языке
                 if part_id:
                     part_obj = Part.query.get(part_id)
                     if part_obj:
                         part_name = part_obj.get_name(lang) if lang else part_obj.get_name('ru')
-                        selected_parts_translated.append({
+                        item = {
                             'part_id': part_id,
                             'name': part_name,
                             'quantity': quantity
-                        })
+                        }
+                        if added_flag is not None:
+                            item['added_by_mechanic'] = added_flag
+                        if added_at:
+                            item['added_at'] = added_at
+                        selected_parts_translated.append(item)
                     else:
                         # Если запчасть не найдена, используем старое название
-                        selected_parts_translated.append({
+                        item = {
                             'name': part.get('name', 'Unknown'),
                             'quantity': quantity
-                        })
+                        }
+                        if added_flag is not None:
+                            item['added_by_mechanic'] = added_flag
+                        if added_at:
+                            item['added_at'] = added_at
+                        selected_parts_translated.append(item)
                 else:
                     # Старый формат без part_id
-                    selected_parts_translated.append(part)
+                    if isinstance(part, dict):
+                        item = {
+                            'name': part.get('name', ''),
+                            'quantity': quantity
+                        }
+                        if added_flag is not None:
+                            item['added_by_mechanic'] = added_flag
+                        if added_at:
+                            item['added_at'] = added_at
+                        selected_parts_translated.append(item)
+                    else:
+                        selected_parts_translated.append(part)
             else:
                 # Совсем старый формат (просто строка)
                 selected_parts_translated.append(part)

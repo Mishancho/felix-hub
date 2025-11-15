@@ -414,6 +414,14 @@
                             {% endfor %}
                         </ul>
                     </div>
+                    <div class="add-part-box" style="margin-top:10px;">
+                        <button class="btn btn-secondary" onclick="toggleAddPart({{ order.id }}, '{{ order.category }}')">+ Добавить деталь</button>
+                        <div id="addPartForm-{{ order.id }}" style="display:none; margin-top:8px;">
+                            <select id="addPartSelect-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
+                            <input type="number" id="addPartQty-{{ order.id }}" min="1" value="1" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px; width:80px; margin-left:8px;">
+                            <button class="btn btn-primary" style="margin-left:8px;" onclick="submitAddPart({{ order.id }})">Добавить</button>
+                        </div>
+                    </div>
                     {% endif %}
 
                     {% if order.comment %}
@@ -436,5 +444,43 @@
     </div>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
+    <script>
+        async function toggleAddPart(orderId, category) {
+            const form = document.getElementById(`addPartForm-${orderId}`);
+            const select = document.getElementById(`addPartSelect-${orderId}`);
+            if (form.style.display === 'none') {
+                try {
+                    const lang = '{{ g.locale }}';
+                    const response = await fetch(`/api/parts?category=${encodeURIComponent(category)}&active_only=true&lang=${lang}`);
+                    const parts = await response.json();
+                    select.innerHTML = parts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                } catch (e) {}
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+            }
+        }
+        async function submitAddPart(orderId) {
+            const select = document.getElementById(`addPartSelect-${orderId}`);
+            const qty = parseInt(document.getElementById(`addPartQty-${orderId}`).value) || 1;
+            const partId = parseInt(select.value);
+            try {
+                const response = await fetch(`/api/orders/${orderId}/add-part`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ part_id: partId, quantity: qty })
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert('❌ Ошибка добавления');
+                    return;
+                }
+                alert('➕ Деталь добавлена');
+                location.reload();
+            } catch (e) {
+                alert('❌ Ошибка добавления');
+            }
+        }
+    </script>
 </body>
 </html>
