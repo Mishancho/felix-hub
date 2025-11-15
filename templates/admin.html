@@ -251,6 +251,14 @@
             font-weight: 700;
             font-size: 0.8em;
         }
+        .added-notice {
+            margin-top: 8px;
+            padding: 10px;
+            background: #e6fffa;
+            color: #0b7285;
+            border-radius: 8px;
+            font-weight: 600;
+        }
         
         .action-buttons {
             display: flex;
@@ -544,6 +552,9 @@
                                     ${order.is_original 
                                         ? '<span class="type-badge type-original">ОРИГИНАЛ</span>' 
                                         : '<span class="type-badge type-analog">АНАЛОГ</span>'}
+                                    ${order.selected_parts.some(p => typeof p === 'object' && p.added_by_mechanic) 
+                                        ? '<div class="added-notice">➕ Добавлена новая запчасть</div>' 
+                                        : ''}
                                     ${order.comment ? `<div style="margin-top:8px; padding:10px; background:#fff3cd; color:#856404; border-radius:8px;">
                                         <strong>💬 ${`{{ _('comment') }}`}: </strong>
                                         <span>${escapeHtml(order.comment)}</span>

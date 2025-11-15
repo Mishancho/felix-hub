@@ -9,6 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import requests
 from dotenv import load_dotenv
 from migrate_parts_translations import find_translation
+from sqlalchemy.orm.attributes import flag_modified
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -817,6 +818,7 @@ def add_part_to_order(order_id):
         if not isinstance(order.selected_parts, list):
             order.selected_parts = []
         order.selected_parts.append(entry)
+        flag_modified(order, 'selected_parts')
         order.updated_at = datetime.utcnow()
         db.session.commit()
         notify_admin_part_added(order, entry)
