@@ -42,54 +42,28 @@ app.config['LANGUAGES'] = {
 babel = Babel()
 
 database_url = os.getenv('DATABASE_URL', 'sqlite:///instance/felix_hub.db')
-try:
-    # Удаляем кавычки, если они есть
-    database_url = database_url.strip()
-    if (database_url.startswith('"') and database_url.endswith('"')) or \
-       (database_url.startswith("'") and database_url.endswith("'")):
-        database_url = database_url[1:-1]
 
-    url = make_url(database_url)
-    
-    # ✅ ЛОГИРОВАНИЕ ПАРАМЕТРОВ (для отладки)
-    print(f"🔌 DB Connection Info:")
-    print(f"   Host: {url.host}")
-    print(f"   Port: {url.port}")
-    print(f"   User: {url.username}")
-    print(f"   DB: {url.database}")
-    
-    # Логируем наличие пароля (не показывая его полностью)
-    if url.password:
-        masked = url.password[:2] + '*' * 4 + url.password[-2:] if len(url.password) > 4 else '****'
-        print(f"   Password: {masked} (len={len(url.password)})")
-    else:
-        print(f"   Password: ❌ NONE")
-    
-    drv = url.drivername.lower()
-    if drv.startswith('postgres'):
-        # Принудительно используем драйвер psycopg 3
-        url = url.set(drivername='postgresql+psycopg')
-        
-        # ✅ АВТОМАТИЧЕСКИЙ SSL
-        # Railway использует IPv6 (например fd12:...), поэтому проверка 'railway' in host может не сработать
-        # Проверяем переменную окружения RAILWAY_ENVIRONMENT или наличие sslmode
-        query_params = dict(url.query)
-        if 'sslmode' not in query_params:
-            # Добавляем sslmode=require по умолчанию для Postgres
-            print("   ℹ️ Adding sslmode=require")
-            query_params['sslmode'] = 'require'
-            url = url.set(query=query_params)
-            
-        database_url = str(url)
-except Exception:
-    if database_url.startswith('postgresql+psycopg2://'):
-        database_url = database_url.replace('postgresql+psycopg2://', 'postgresql+psycopg://', 1)
-    elif database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql+psycopg://', 1)
-    elif database_url.startswith('postgresql://'):
-        database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+# Очистка и нормализация URL
+database_url = database_url.strip()
+if (database_url.startswith('"') and database_url.endswith('"')) or \
+   (database_url.startswith("'") and database_url.endswith("'")):
+    database_url = database_url[1:-1]
+
+# Исправление протокола для SQLAlchemy (postgres:// -> postgresql://)
+# Принудительно используем драйвер psycopg 3 (так как он в requirements.txt)
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql+psycopg://', 1)
+elif database_url.startswith('postgresql://'):
+    database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+# Настройки SSL для PostgreSQL (Railway)
+if 'postgresql' in database_url:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "connect_args": {"sslmode": "require"}
+    }
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
