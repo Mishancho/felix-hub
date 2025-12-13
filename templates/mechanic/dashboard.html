@@ -233,11 +233,11 @@
                 <div class="order-card">
                     <div class="order-header">
                         <div class="order-id">{{ _('order') }} №{{ order.id }}</div>
-                        <span class="status-badge {{ order.status }}">{{ order.status }}</span>
+                        <span class="status-badge {{ order.status }}">{{ get_status_translation(order.status) }}</span>
                     </div>
                     <div class="order-details">
                         <div>🚗 <strong>{{ _('plate_number') }}:</strong> {{ order.plate_number }}</div>
-                        <div>📦 <strong>{{ _('category') }}:</strong> {{ order.category }}</div>
+                        <div>📦 <strong>{{ _('category') }}:</strong> {{ get_category_name(order.category) }}</div>
                         <div>⏰ {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
                     </div>
                 </div>
@@ -253,6 +253,7 @@
             {% endif %}
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/language.js') }}"></script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
 </body>

@@ -126,6 +126,25 @@ def inject_category_translator():
     return dict(get_category_name=get_category_name)
 
 @app.context_processor
+def inject_status_translator():
+    """Добавляем функцию для перевода статусов заказов"""
+    def get_status_translation(status):
+        """Получить перевод статуса заказа"""
+        status_map = {
+            'новый': 'status_new',
+            'в работе': 'status_in_progress',
+            'готово': 'status_ready',
+            'выдано': 'status_delivered',
+            'отменено': 'status_cancelled'
+        }
+        key = status_map.get(status)
+        if key:
+            return gettext(key)
+        return status
+    
+    return dict(get_status_translation=get_status_translation)
+
+@app.context_processor
 def inject_cache_buster():
     """Добавляем версионирование для статических файлов (кэш-бастинг)"""
     import time

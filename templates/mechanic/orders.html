@@ -375,7 +375,7 @@
                 <div class="order-card">
                     <div class="order-top">
                         <div class="order-id">{{ _('order') }} №{{ order.id }}</div>
-                        <span class="status-badge {{ order.status }}">{{ order.status }}</span>
+                        <span class="status-badge {{ order.status }}">{{ get_status_translation(order.status) }}</span>
                     </div>
 
                     <div class="order-details">
@@ -450,6 +450,7 @@
             {% endif %}
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/language.js') }}"></script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
     <script>

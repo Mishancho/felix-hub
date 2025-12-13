@@ -298,10 +298,24 @@ const translations = {
 };
 
 /**
- * Получить текущий язык из localStorage
+ * Получить текущий язык
+ * Приоритет:
+ * 1. Атрибут lang у тега html
+ * 2. localStorage
+ * 3. 'ru' по умолчанию
  * @returns {string} Код языка (ru, en, he)
  */
 function getCurrentLanguage() {
+    // Проверяем атрибут lang у html
+    const htmlLang = document.documentElement.getAttribute('lang');
+    if (htmlLang && ['ru', 'en', 'he'].includes(htmlLang)) {
+        // Синхронизируем localStorage если отличается
+        if (localStorage.getItem('language') !== htmlLang) {
+            localStorage.setItem('language', htmlLang);
+        }
+        return htmlLang;
+    }
+    
     return localStorage.getItem('language') || 'ru';
 }
 
