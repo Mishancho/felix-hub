@@ -821,8 +821,9 @@ def get_orders():
         
         orders = query.order_by(Order.created_at.desc()).all()
         
-        # Админ всегда получает данные на русском языке
-        return jsonify([order.to_dict(lang='ru') for order in orders])
+        # Админ получает данные на текущем языке (или русском по умолчанию)
+        lang = g.locale if hasattr(g, 'locale') else 'ru'
+        return jsonify([order.to_dict(lang=lang) for order in orders])
     except Exception as e:
         error_msg = str(e)
         
