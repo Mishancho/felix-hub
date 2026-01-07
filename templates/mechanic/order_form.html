@@ -453,15 +453,15 @@
             </div>
 
             <div class="form-group">
-                <label>{{ _('additives') if _('additives') != 'additives' else 'Добавки' }}</label>
+                <label>{{ _('additives') }}</label>
                 <div class="radio-group">
                     <label class="radio-item">
                         <input type="radio" name="additives_mode" value="with" onchange="toggleAdditives(true)">
-                        <span>🧪 {{ _('with_additives') if _('with_additives') != 'with_additives' else 'С добавками' }}</span>
+                        <span>🧪 {{ _('with_additives') }}</span>
                     </label>
                     <label class="radio-item">
                         <input type="radio" name="additives_mode" value="without" checked onchange="toggleAdditives(false)">
-                        <span>🚫 {{ _('without_additives') if _('without_additives') != 'without_additives' else 'Без добавок' }}</span>
+                        <span>🚫 {{ _('without_additives') }}</span>
                     </label>
                 </div>
             </div>
@@ -490,7 +490,7 @@
         let selectedPartsGlobal = {}; // Формат: { 'Название детали': количество }
 
         // Добавки: Очиститель стекол и Топливная присадка
-        const ADDITIVES = ['Присадка для омывателя стёкол', 'Очиститель нагара/декарбонизатор'];
+        const ADDITIVES = ['Присадка для омывателя стёкол', 'Присадка для топлива'];
 
         function toggleAdditives(enable) {
              // Ищем детали в каталоге
@@ -554,6 +554,25 @@
                     }
                 }
             });
+
+            // Логика для надписи "БЕЗ ПРИСАДОК"
+            const noAdditivesKey = 'no_additives_label';
+            if (!enable) {
+                // Добавляем маркер "БЕЗ ПРИСАДОК"
+                const labelName = '{{ _("no_additives") if _("no_additives") != "no_additives" else "БЕЗ ПРИСАДОК" }}';
+                selectedPartsGlobal[noAdditivesKey] = {
+                    name: labelName,
+                    quantity: 1,
+                    part_id: null, // Это виртуальная деталь
+                    is_label: true
+                };
+            } else {
+                // Удаляем маркер
+                if (selectedPartsGlobal[noAdditivesKey]) {
+                    delete selectedPartsGlobal[noAdditivesKey];
+                }
+            }
+
             updatePartsCounter();
         }
 

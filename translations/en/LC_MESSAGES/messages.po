@@ -794,5 +794,14 @@ msgstr "Invalid username or password"
 msgid "cancel_order"
 msgstr "Cancel Order"
 
-msgid "confirm_cancel_order"
-msgstr "Are you sure you want to cancel the order?"
+msgid "additives"
+msgstr "Additives"
+
+msgid "with_additives"
+msgstr "With additives"
+
+msgid "without_additives"
+msgstr "Without additives"
+
+msgid "no_additives"
+msgstr "NO ADDITIVES"

@@ -797,5 +797,14 @@ msgstr "החלק כבר ברשימה"
 msgid "cancel_order"
 msgstr "בטל הזמנה"
 
-msgid "confirm_cancel_order"
-msgstr "האם אתה בטוח שברצונך לבטל את ההזמנה?"
+msgid "additives"
+msgstr "תוספים"
+
+msgid "with_additives"
+msgstr "עם תוספים"
+
+msgid "without_additives"
+msgstr "ללא תוספים"
+
+msgid "no_additives"
+msgstr "ללא תוספים"
