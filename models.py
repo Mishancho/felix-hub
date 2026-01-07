@@ -291,106 +291,85 @@ class Order(db.Model):
             if category_obj:
                 category_name = category_obj.get_name(lang)
         
-        # Предзагрузка запчастей для поиска переводов и сортировки
-        parts_lookup = {}
-        parts_sort = {}
-        max_order = 0
-        
-        try:
-            parts_in_category = Part.query.filter_by(category=self.category).all()
-            for p in parts_in_category:
-                # Сохраняем для поиска по ID
-                parts_lookup[p.id] = p
-                
-                # Сохраняем для поиска по именам (ru, en, he, old_name)
-                if p.name_ru: parts_lookup[p.name_ru] = p
-                if p.name_en: parts_lookup[p.name_en] = p
-                if p.name_he: parts_lookup[p.name_he] = p
-                if p.name: parts_lookup[p.name] = p
-                
-                # Данные для сортировки
-                s_order = p.sort_order if p.sort_order is not None else 0
-                parts_sort[p.id] = s_order
-                if p.name_ru: parts_sort[p.name_ru] = s_order
-                if p.name_en: parts_sort[p.name_en] = s_order
-                if p.name_he: parts_sort[p.name_he] = s_order
-                if p.name: parts_sort[p.name] = s_order
-                
-                if s_order > max_order:
-                    max_order = s_order
-        except Exception:
-            pass
-        
         # Обработка selected_parts с переводом
         selected_parts_translated = []
         for part in (self.selected_parts or []):
-            item = None
-            part_obj = None
-            
             if isinstance(part, dict):
                 part_id = part.get('part_id')
                 quantity = part.get('quantity', 1)
                 added_flag = part.get('added_by_mechanic')
                 added_at = part.get('added_at')
-                name = part.get('name')
                 
-                # Попытка найти объект запчасти
-                # 1. По ID в кэше
-                if part_id and part_id in parts_lookup:
-                    part_obj = parts_lookup[part_id]
-                # 2. По имени в кэше (для старых заказов)
-                elif name and name in parts_lookup:
-                    part_obj = parts_lookup[name]
-                # 3. По ID в БД (если категория отличается)
-                elif part_id:
+                # Если есть part_id, получаем название на нужном языке
+                if part_id:
                     part_obj = Part.query.get(part_id)
-
-                if part_obj:
-                    part_name = part_obj.get_name(lang) if lang else part_obj.get_name('ru')
-                    item = {
-                        'part_id': part_obj.id,
-                        'name': part_name,
-                        'quantity': quantity
-                    }
+                    if part_obj:
+                        part_name = part_obj.get_name(lang) if lang else part_obj.get_name('ru')
+                        item = {
+                            'part_id': part_id,
+                            'name': part_name,
+                            'quantity': quantity
+                        }
+                        if added_flag is not None:
+                            item['added_by_mechanic'] = added_flag
+                        if added_at:
+                            item['added_at'] = added_at
+                        selected_parts_translated.append(item)
+                    else:
+                        # Если запчасть не найдена, используем старое название
+                        item = {
+                            'name': part.get('name', 'Unknown'),
+                            'quantity': quantity
+                        }
+                        if added_flag is not None:
+                            item['added_by_mechanic'] = added_flag
+                        if added_at:
+                            item['added_at'] = added_at
+                        selected_parts_translated.append(item)
                 else:
-                    # Если запчасть не найдена
-                    item = {
-                        'name': name or 'Unknown',
-                        'quantity': quantity
-                    }
-                
-                if added_flag is not None:
-                    item['added_by_mechanic'] = added_flag
-                if added_at:
-                    item['added_at'] = added_at
+                    # Старый формат без part_id
+                    if isinstance(part, dict):
+                        item = {
+                            'name': part.get('name', ''),
+                            'quantity': quantity
+                        }
+                        if added_flag is not None:
+                            item['added_by_mechanic'] = added_flag
+                        if added_at:
+                            item['added_at'] = added_at
+                        selected_parts_translated.append(item)
+                    else:
+                        selected_parts_translated.append(part)
             else:
-                # Старый формат (строка)
-                name = str(part)
-                if name in parts_lookup:
-                    part_obj = parts_lookup[name]
-                    item = {
-                        'part_id': part_obj.id,
-                        'name': part_obj.get_name(lang) if lang else part_obj.get_name('ru'),
-                        'quantity': 1
-                    }
+                # Совсем старый формат (просто строка)
+                selected_parts_translated.append(part)
+
+        # Сортировка по порядковому номеру из БД
+        try:
+            parts_in_category = Part.query.filter_by(category=self.category).all()
+            id_to_order = {p.id: (p.sort_order if p.sort_order is not None else 0) for p in parts_in_category}
+            name_to_order = {}
+            for p in parts_in_category:
+                for nm in [p.name_ru, p.name_en, p.name_he, p.name]:
+                    if nm:
+                        name_to_order[nm] = (p.sort_order if p.sort_order is not None else 0)
+            max_order = max([o for o in id_to_order.values()] + [0])
+            def sort_key(item, idx):
+                if isinstance(item, dict):
+                    pid = item.get('part_id')
+                    nm = item.get('name')
+                    if pid in id_to_order:
+                        return (id_to_order[pid], idx)
+                    if nm in name_to_order:
+                        return (name_to_order[nm], idx)
+                    return (max_order + 1, idx)
                 else:
-                    item = name
-
-            if item:
-                selected_parts_translated.append(item)
-
-        # Сортировка по порядковому номеру
-        def sort_key(item, idx):
-            if isinstance(item, dict):
-                pid = item.get('part_id')
-                nm = item.get('name')
-                if pid in parts_sort: return (parts_sort[pid], idx)
-                if nm in parts_sort: return (parts_sort[nm], idx)
-            else:
-                if item in parts_sort: return (parts_sort[item], idx)
-            return (max_order + 1, idx)
-            
-        selected_parts_translated = [x for _, x in sorted([(sort_key(it, i), it) for i, it in enumerate(selected_parts_translated)], key=lambda t: t[0])]
+                    if item in name_to_order:
+                        return (name_to_order[item], idx)
+                    return (max_order + 1, idx)
+            selected_parts_translated = [x for _, x in sorted([(sort_key(it, i), it) for i, it in enumerate(selected_parts_translated)], key=lambda t: t[0])]
+        except Exception:
+            pass
         
         data = {
             'id': self.id,

@@ -449,49 +449,11 @@
     </div>
     
     <script>
-        // Переводы интерфейса
-        const TRANSLATIONS = {
-            id: "ID",
-            mechanic: "{{ _('mechanic') }}",
-            plate_number: "{{ _('plate_number') }}",
-            category: "{{ _('category') }}",
-            parts: "{{ _('parts') }}",
-            comment: "{{ _('comment') }}",
-            status: "{{ _('status') }}",
-            date: "{{ _('created') }}",
-            actions: "{{ _('actions') }}",
-            
-            // Статусы
-            status_new: "{{ _('status_new') }}",
-            status_in_progress: "{{ _('status_in_progress') }}",
-            status_ready: "{{ _('status_ready') }}",
-            status_delivered: "{{ _('status_delivered') }}",
-            status_cancelled: "{{ _('status_cancelled') }}",
-            
-            // Бейджи и кнопки
-            original: "{{ _('original') }}",
-            analog: "{{ _('analog') }}",
-            part_added: "{{ _('part_added') }}",
-            print: "{{ _('print') }}",
-            delete: "{{ _('delete') }}",
-            loading: "{{ _('loading') }}",
-            no_orders: "{{ _('no_orders_found') }}",
-            
-            // Сообщения
-            confirm_delete: "{{ _('confirm_delete') }}",
-            error_loading: "{{ _('error_loading') }}",
-            success_updated: "✅ OK",
-            error_updated: "❌ Error"
-        };
-
         let orders = [];
         let partsIndexByCategory = {};
-        // Предзагрузка индекса запчастей для сортировки
         async function preloadPartsIndex() {
             try {
-                const lang = '{{ g.locale if g.locale else "ru" }}';
-                const resp = await fetch(`/api/parts/catalog?active_only=true&lang=${lang}`);
-                if (!resp.ok) throw new Error('Catalog load failed');
+                const resp = await fetch('/api/parts/catalog?active_only=true&lang=ru');
                 const catalog = await resp.json();
                 const idx = {};
                 for (const [catName, list] of Object.entries(catalog)) {
@@ -575,7 +537,7 @@
                 content.innerHTML = `
                     <div class="empty-state">
                         <p style="font-size: 3em;">📦</p>
-                        <p>${TRANSLATIONS.no_orders}</p>
+                        <p>Заказов не найдено</p>
                     </div>
                 `;
                 return;
@@ -585,15 +547,15 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>${TRANSLATIONS.id}</th>
-                            <th>${TRANSLATIONS.mechanic}</th>
-                            <th>${TRANSLATIONS.plate_number}</th>
-                            <th>${TRANSLATIONS.category}</th>
-                            <th>${TRANSLATIONS.parts}</th>
-                            <th>${TRANSLATIONS.comment}</th>
-                            <th>${TRANSLATIONS.status}</th>
-                            <th>${TRANSLATIONS.date}</th>
-                            <th>${TRANSLATIONS.actions}</th>
+                            <th>ID</th>
+                            <th>Механик</th>
+                            <th>Гос номер</th>
+                            <th>Категория</th>
+                            <th>Детали</th>
+                            <th>${`{{ _('comment') }}`}</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -603,16 +565,6 @@
                 const map = partsIndexByCategory[order.category];
                 const selectedParts = Array.isArray(order.selected_parts) ? [...order.selected_parts] : [];
                 if (map) selectedParts.sort((a, b) => partOrderIndex(a, map) - partOrderIndex(b, map));
-                
-                // Отображение статусов
-                const statusOptions = `
-                    <option value="новый" ${order.status === 'новый' ? 'selected' : ''}>${TRANSLATIONS.status_new}</option>
-                    <option value="в работе" ${order.status === 'в работе' ? 'selected' : ''}>${TRANSLATIONS.status_in_progress}</option>
-                    <option value="готово" ${order.status === 'готово' ? 'selected' : ''}>${TRANSLATIONS.status_ready}</option>
-                    <option value="выдано" ${order.status === 'выдано' ? 'selected' : ''}>${TRANSLATIONS.status_delivered}</option>
-                    <option value="отменено" ${order.status === 'отменено' || order.status === 'отменён' ? 'selected' : ''}>${TRANSLATIONS.status_cancelled}</option>
-                `;
-
                 html += `
                     <tr>
                         <td><strong>#${order.id}</strong></td>
@@ -633,13 +585,13 @@
                                     }).join('')}
                                 </ul>
                                     ${order.is_original 
-                                        ? `<span class="type-badge type-original">${TRANSLATIONS.original}</span>` 
-                                        : `<span class="type-badge type-analog">${TRANSLATIONS.analog}</span>`}
+                                        ? '<span class="type-badge type-original">ОРИГИНАЛ</span>' 
+                                        : '<span class="type-badge type-analog">АНАЛОГ</span>'}
                                     ${selectedParts.some(p => typeof p === 'object' && p.added_by_mechanic) 
-                                        ? `<div class="added-notice">${TRANSLATIONS.part_added}</div>` 
+                                        ? '<div class="added-notice">➕ Добавлена новая запчасть</div>' 
                                         : ''}
                                     ${order.comment ? `<div style="margin-top:8px; padding:10px; background:#fff3cd; color:#856404; border-radius:8px;">
-                                        <strong>💬 ${TRANSLATIONS.comment}: </strong>
+                                        <strong>💬 ${`{{ _('comment') }}`}: </strong>
                                         <span>${escapeHtml(order.comment)}</span>
                                     </div>` : ''}
                             </div>
@@ -650,14 +602,18 @@
                         <td>
                             <select class="status-badge status-${order.status}" 
                                     onchange="updateOrderStatus(${order.id}, this.value)">
-                                ${statusOptions}
+                                <option value="новый" ${order.status === 'новый' ? 'selected' : ''}>Новый</option>
+                                <option value="в работе" ${order.status === 'в работе' ? 'selected' : ''}>В работе</option>
+                                <option value="готово" ${order.status === 'готово' ? 'selected' : ''}>Готово</option>
+                                <option value="выдано" ${order.status === 'выдано' ? 'selected' : ''}>Выдано</option>
+                                <option value="отменено" ${order.status === 'отменено' || order.status === 'отменён' ? 'selected' : ''}>Отменено</option>
                             </select>
                         </td>
-                        <td>${new Date(order.created_at).toLocaleString('{{ g.locale if g.locale else "ru" }}')}</td>
+                        <td>${new Date(order.created_at).toLocaleString('ru-RU')}</td>
                         <td>
                             <div class="action-buttons">
                                 <button class="btn btn-sm btn-info" onclick="printOrder(${order.id})">
-                                    🖨️ ${TRANSLATIONS.print}
+                                    🖨️ Печать
                                 </button>
                                 <button class="btn btn-sm btn-danger" onclick="deleteOrder(${order.id})">
                                     🗑️
