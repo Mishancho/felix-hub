@@ -669,6 +669,14 @@ def mechanic_settings():
     """Настройки механика"""
     return render_template('mechanic/settings.html')
 
+
+@app.route('/order/create')
+def public_create_order():
+    """Публичная страница создания заказа с выбором механика"""
+    mechanics = Mechanic.query.filter_by(is_active=True).order_by(Mechanic.full_name).all()
+    return render_template('create_order.html', mechanics=mechanics)
+
+
 @app.route('/api/submit_order', methods=['POST'])
 def submit_order():
     """API для создания нового заказа"""
@@ -682,16 +690,27 @@ def submit_order():
             mechanic_name = current_user.full_name
             telegram_id = current_user.telegram_id
         else:
-            # Анонимный заказ (обратная совместимость)
-            if not app.config['ALLOW_ANONYMOUS_ORDERS']:
-                return jsonify({'error': 'Требуется авторизация'}), 401
-            
-            mechanic_id = None
-            mechanic_name = data.get('mechanic_name')
-            telegram_id = data.get('telegram_id')
-            
-            if not mechanic_name:
-                return jsonify({'error': 'Имя механика обязательно'}), 400
+            # Проверяем, передан ли ID механика явно (для публичной страницы выбора)
+            mechanic_id_param = data.get('mechanic_id')
+            if mechanic_id_param:
+                mechanic = Mechanic.query.get(mechanic_id_param)
+                if not mechanic:
+                    return jsonify({'error': 'Механик не найден'}), 400
+                
+                mechanic_id = mechanic.id
+                mechanic_name = mechanic.full_name
+                telegram_id = mechanic.telegram_id
+            else:
+                # Анонимный заказ (обратная совместимость)
+                if not app.config['ALLOW_ANONYMOUS_ORDERS']:
+                    return jsonify({'error': 'Требуется авторизация'}), 401
+                
+                mechanic_id = None
+                mechanic_name = data.get('mechanic_name')
+                telegram_id = data.get('telegram_id')
+                
+                if not mechanic_name:
+                    return jsonify({'error': 'Имя механика обязательно'}), 400
         
         # Валидация обязательных полей
         if not data.get('plate_number'):
@@ -821,9 +840,8 @@ def get_orders():
         
         orders = query.order_by(Order.created_at.desc()).all()
         
-        # Админ получает данные на текущем языке (или русском по умолчанию)
-        lang = g.locale if hasattr(g, 'locale') else 'ru'
-        return jsonify([order.to_dict(lang=lang) for order in orders])
+        # Админ всегда получает данные на русском языке
+        return jsonify([order.to_dict(lang='ru') for order in orders])
     except Exception as e:
         error_msg = str(e)
         
