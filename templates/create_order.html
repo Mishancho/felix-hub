@@ -413,6 +413,20 @@
             </div>
 
             <div class="form-group">
+                <label>{{ _('additives') }}</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="additives_mode" value="with" onchange="toggleAdditives(true)">
+                        <span>🧪 {{ _('with_additives') }}</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="additives_mode" value="without" checked onchange="toggleAdditives(false)">
+                        <span>🚫 {{ _('without_additives') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label for="comment">{{ _('comment') }} ({{ _('optional') }})</label>
                 <textarea id="comment" 
                           name="comment" 
@@ -433,6 +447,93 @@
         
         // Сохраняем выбранные детали из всех категорий с количеством
         let selectedPartsGlobal = {}; // Формат: { 'Название детали': количество }
+
+        // Добавки: Очиститель стекол и Топливная присадка
+        const ADDITIVES = ['Присадка для омывателя стёкол', 'Присадка для топлива'];
+
+        function toggleAdditives(enable) {
+             // Ищем детали в каталоге
+            ADDITIVES.forEach(additiveName => {
+                let foundPart = null;
+                let foundCategory = null;
+
+                // Поиск детали в каталоге
+                for (const cat in catalog) {
+                    const parts = catalog[cat];
+                    const part = parts.find(p => {
+                        const pName = typeof p === 'object' ? p.name : p;
+                        return pName === additiveName;
+                    });
+                    if (part) {
+                        foundPart = part;
+                        foundCategory = cat;
+                        break;
+                    }
+                }
+
+                if (foundPart) {
+                    const partName = typeof foundPart === 'object' ? foundPart.name : foundPart;
+                    const partId = typeof foundPart === 'object' ? foundPart.id : null;
+                    const partKey = partId || partName;
+
+                    if (enable) {
+                        // Добавляем в selectedPartsGlobal
+                        if (!selectedPartsGlobal[partKey]) {
+                            selectedPartsGlobal[partKey] = {
+                                name: partName,
+                                quantity: 1,
+                                part_id: partId
+                            };
+                        }
+                    } else {
+                        // Удаляем из selectedPartsGlobal
+                        if (selectedPartsGlobal[partKey]) {
+                            delete selectedPartsGlobal[partKey];
+                        }
+                    }
+
+                    // Если мы находимся в категории этой детали, обновляем чекбокс
+                    const categorySelect = document.getElementById('category');
+                    if (categorySelect.value === foundCategory) {
+                        // Находим чекбокс по value или data-part-id
+                        const checkboxes = document.querySelectorAll('input[name="selected_parts"]');
+                        checkboxes.forEach(cb => {
+                            const cbId = cb.getAttribute('data-part-id');
+                            const cbName = cb.value;
+                            if ((partId && cbId == partId) || (!partId && cbName === partName)) {
+                                cb.checked = enable;
+                                const item = cb.closest('.checkbox-item');
+                                if (enable) {
+                                    item.classList.add('checked');
+                                } else {
+                                    item.classList.remove('checked');
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Логика для надписи "БЕЗ ПРИСАДОК"
+            const noAdditivesKey = 'no_additives_label';
+            if (!enable) {
+                // Добавляем маркер "БЕЗ ПРИСАДОК"
+                const labelName = '{{ _("no_additives") if _("no_additives") != "no_additives" else "БЕЗ ПРИСАДОК" }}';
+                selectedPartsGlobal[noAdditivesKey] = {
+                    name: labelName,
+                    quantity: 1,
+                    part_id: null, // Это виртуальная деталь
+                    is_label: true
+                };
+            } else {
+                // Удаляем маркер
+                if (selectedPartsGlobal[noAdditivesKey]) {
+                    delete selectedPartsGlobal[noAdditivesKey];
+                }
+            }
+
+            updatePartsCounter();
+        }
 
         // Загрузка каталога из API
         async function loadCatalog() {
@@ -671,6 +772,9 @@
                     document.getElementById('manualParts').innerHTML = '';
                     selectedPartsGlobal = {}; // Очищаем глобальный объект
 
+                    // Восстанавливаем состояние добавок (по умолчанию без добавок)
+                    toggleAdditives(false);
+
                     // Оставляем на странице (для следующего заказа), но скроллим вверх
                     window.scrollTo(0, 0);
                     
@@ -695,7 +799,10 @@
         });
         
         // Загрузка каталога при загрузке страницы
-        loadCatalog();
+        loadCatalog().then(() => {
+            // Инициализация состояния добавок (по умолчанию "без добавок")
+            toggleAdditives(false);
+        });
     </script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
