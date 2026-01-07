@@ -683,34 +683,32 @@ def submit_order():
     try:
         data = request.get_json()
         
-        # Определяем, создается ли заказ авторизованным механиком
-        if current_user.is_authenticated:
-            # Заказ от авторизованного механика
+        # Приоритет 1: Явно переданный ID механика (для публичной страницы выбора)
+        mechanic_id_param = data.get('mechanic_id')
+        if mechanic_id_param:
+            mechanic = Mechanic.query.get(mechanic_id_param)
+            if not mechanic:
+                return jsonify({'error': 'Механик не найден'}), 400
+            
+            mechanic_id = mechanic.id
+            mechanic_name = mechanic.full_name
+            telegram_id = mechanic.telegram_id
+        # Приоритет 2: Авторизованный пользователь (если ID не передан явно)
+        elif current_user.is_authenticated:
             mechanic_id = current_user.id
             mechanic_name = current_user.full_name
             telegram_id = current_user.telegram_id
+        # Приоритет 3: Анонимный заказ / обратная совместимость
         else:
-            # Проверяем, передан ли ID механика явно (для публичной страницы выбора)
-            mechanic_id_param = data.get('mechanic_id')
-            if mechanic_id_param:
-                mechanic = Mechanic.query.get(mechanic_id_param)
-                if not mechanic:
-                    return jsonify({'error': 'Механик не найден'}), 400
-                
-                mechanic_id = mechanic.id
-                mechanic_name = mechanic.full_name
-                telegram_id = mechanic.telegram_id
-            else:
-                # Анонимный заказ (обратная совместимость)
-                if not app.config['ALLOW_ANONYMOUS_ORDERS']:
-                    return jsonify({'error': 'Требуется авторизация'}), 401
-                
-                mechanic_id = None
-                mechanic_name = data.get('mechanic_name')
-                telegram_id = data.get('telegram_id')
-                
-                if not mechanic_name:
-                    return jsonify({'error': 'Имя механика обязательно'}), 400
+            if not app.config['ALLOW_ANONYMOUS_ORDERS']:
+                return jsonify({'error': 'Требуется авторизация'}), 401
+            
+            mechanic_id = None
+            mechanic_name = data.get('mechanic_name')
+            telegram_id = data.get('telegram_id')
+            
+            if not mechanic_name:
+                return jsonify({'error': 'Имя механика обязательно'}), 400
         
         # Валидация обязательных полей
         if not data.get('plate_number'):
