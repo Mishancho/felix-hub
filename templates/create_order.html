@@ -185,10 +185,22 @@
             border-color: #667eea;
         }
 
-        .radio-item.active {
-            background: #e7f1ff;
+        .radio-item.active,
+        .radio-item:has(input[type="radio"]:checked) {
+            background: #667eea;
             border-color: #667eea;
-            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.25);
+        }
+
+        .radio-item.active span,
+        .radio-item:has(input[type="radio"]:checked) span {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .radio-item.active input[type="radio"],
+        .radio-item:has(input[type="radio"]:checked) input[type="radio"] {
+            accent-color: #fff;
         }
 
         .radio-item input[type="radio"] {
@@ -200,7 +212,6 @@
 
         .radio-item input[type="radio"]:checked + span {
             font-weight: 700;
-            color: #667eea;
         }
 
         .btn-submit {
@@ -421,11 +432,11 @@
             <div class="form-group">
                 <label>{{ _('additives') }}</label>
                 <div class="radio-group" id="additives-group">
-                    <label class="radio-item" onclick="handleAdditivesClick(this, 'with')">
+                    <label class="radio-item">
                         <input type="radio" name="additives_mode" value="with">
                         <span>🧪 {{ _('with_additives') }}</span>
                     </label>
-                    <label class="radio-item" onclick="handleAdditivesClick(this, 'without')">
+                    <label class="radio-item">
                         <input type="radio" name="additives_mode" value="without">
                         <span>🚫 {{ _('without_additives') }}</span>
                     </label>
@@ -458,27 +469,56 @@
         const ADDITIVES = ['Присадка для омывателя стёкол', 'Присадка для топлива'];
         let currentAdditivesMode = null; // 'with', 'without', or null
 
-        function handleAdditivesClick(labelElement, mode) {
-            // Prevent default radio behavior if handled manually
-            const input = labelElement.querySelector('input');
-            
-            if (currentAdditivesMode === mode) {
-                // Deselect
-                currentAdditivesMode = null;
-                input.checked = false;
-                labelElement.classList.remove('active');
-            } else {
-                // Select new
-                currentAdditivesMode = mode;
-                input.checked = true;
-                
-                // Update UI classes
-                const group = document.getElementById('additives-group');
-                group.querySelectorAll('.radio-item').forEach(item => item.classList.remove('active'));
-                labelElement.classList.add('active');
+        function syncRadioGroupActive(group) {
+            if (!group) return;
+            group.querySelectorAll('.radio-item').forEach(item => {
+                const input = item.querySelector('input[type="radio"]');
+                item.classList.toggle('active', Boolean(input && input.checked));
+            });
+        }
+
+        function initRadioGroups() {
+            document.querySelectorAll('.radio-group').forEach(group => {
+                group.addEventListener('change', function(e) {
+                    if (e.target && e.target.matches('input[type="radio"]')) {
+                        syncRadioGroupActive(group);
+                    }
+                });
+                syncRadioGroupActive(group);
+            });
+
+            const additivesGroup = document.getElementById('additives-group');
+            if (additivesGroup) {
+                additivesGroup.addEventListener('click', function(e) {
+                    const label = e.target.closest('.radio-item');
+                    if (!label || !additivesGroup.contains(label)) return;
+
+                    const input = label.querySelector('input[type="radio"]');
+                    if (!input) return;
+
+                    e.preventDefault();
+
+                    const mode = input.value;
+                    const isSame = currentAdditivesMode === mode;
+
+                    additivesGroup.querySelectorAll('input[name="additives_mode"]').forEach(i => {
+                        i.checked = false;
+                    });
+
+                    if (isSame) {
+                        currentAdditivesMode = null;
+                        toggleAdditives(null);
+                    } else {
+                        input.checked = true;
+                        currentAdditivesMode = mode;
+                        toggleAdditives(mode);
+                    }
+
+                    syncRadioGroupActive(additivesGroup);
+                });
+
+                syncRadioGroupActive(additivesGroup);
             }
-            
-            toggleAdditives(currentAdditivesMode);
         }
 
         function toggleAdditives(mode) {
@@ -581,6 +621,10 @@
                     option.textContent = cat;
                     categorySelect.appendChild(option);
                 });
+
+                if (currentAdditivesMode) {
+                    toggleAdditives(currentAdditivesMode);
+                }
             } catch (error) {
                 console.error('{{ _("error_loading_catalog") }}:', error);
             }
@@ -802,8 +846,13 @@
                     document.getElementById('manualParts').innerHTML = '';
                     selectedPartsGlobal = {}; // Очищаем глобальный объект
 
-                    // Восстанавливаем состояние добавок (по умолчанию без добавок)
-                    toggleAdditives(false);
+                    currentAdditivesMode = null;
+                    document.querySelectorAll('input[name="additives_mode"]').forEach(i => {
+                        i.checked = false;
+                    });
+                    const additivesGroup = document.getElementById('additives-group');
+                    syncRadioGroupActive(additivesGroup);
+                    toggleAdditives(null);
 
                     // Оставляем на странице (для следующего заказа), но скроллим вверх
                     window.scrollTo(0, 0);
@@ -828,11 +877,10 @@
             }
         });
         
-        // Загрузка каталога при загрузке страницы
-        loadCatalog().then(() => {
-            // Инициализация состояния добавок (по умолчанию "без добавок")
-            toggleAdditives(false);
-        });
+        initRadioGroups();
+        toggleAdditives(null);
+        syncRadioGroupActive(document.getElementById('additives-group'));
+        loadCatalog();
     </script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
