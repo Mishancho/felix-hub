@@ -217,6 +217,12 @@
             border-color: #667eea;
         }
 
+        .radio-item.active {
+            background: #e7f1ff;
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+        }
+
         .radio-item input[type="radio"] {
             margin-right: 10px;
             width: 18px;
@@ -454,13 +460,13 @@
 
             <div class="form-group">
                 <label>{{ _('additives') }}</label>
-                <div class="radio-group">
-                    <label class="radio-item">
-                        <input type="radio" name="additives_mode" value="with" onchange="toggleAdditives(true)">
+                <div class="radio-group" id="additives-group">
+                    <label class="radio-item" onclick="handleAdditivesClick(this, 'with')">
+                        <input type="radio" name="additives_mode" value="with">
                         <span>🧪 {{ _('with_additives') }}</span>
                     </label>
-                    <label class="radio-item">
-                        <input type="radio" name="additives_mode" value="without" checked onchange="toggleAdditives(false)">
+                    <label class="radio-item" onclick="handleAdditivesClick(this, 'without')">
+                        <input type="radio" name="additives_mode" value="without">
                         <span>🚫 {{ _('without_additives') }}</span>
                     </label>
                 </div>
@@ -491,8 +497,32 @@
 
         // Добавки: Очиститель стекол и Топливная присадка
         const ADDITIVES = ['Присадка для омывателя стёкол', 'Присадка для топлива'];
+        let currentAdditivesMode = null; // 'with', 'without', or null
 
-        function toggleAdditives(enable) {
+        function handleAdditivesClick(labelElement, mode) {
+            // Prevent default radio behavior if handled manually
+            const input = labelElement.querySelector('input');
+            
+            if (currentAdditivesMode === mode) {
+                // Deselect
+                currentAdditivesMode = null;
+                input.checked = false;
+                labelElement.classList.remove('active');
+            } else {
+                // Select new
+                currentAdditivesMode = mode;
+                input.checked = true;
+                
+                // Update UI classes
+                const group = document.getElementById('additives-group');
+                group.querySelectorAll('.radio-item').forEach(item => item.classList.remove('active'));
+                labelElement.classList.add('active');
+            }
+            
+            toggleAdditives(currentAdditivesMode);
+        }
+
+        function toggleAdditives(mode) {
              // Ищем детали в каталоге
             ADDITIVES.forEach(additiveName => {
                 let foundPart = null;
@@ -517,7 +547,7 @@
                     const partId = typeof foundPart === 'object' ? foundPart.id : null;
                     const partKey = partId || partName;
 
-                    if (enable) {
+                    if (mode === 'with') {
                         // Добавляем в selectedPartsGlobal
                         if (!selectedPartsGlobal[partKey]) {
                             selectedPartsGlobal[partKey] = {
@@ -542,9 +572,9 @@
                             const cbId = cb.getAttribute('data-part-id');
                             const cbName = cb.value;
                             if ((partId && cbId == partId) || (!partId && cbName === partName)) {
-                                cb.checked = enable;
+                                cb.checked = (mode === 'with');
                                 const item = cb.closest('.checkbox-item');
-                                if (enable) {
+                                if (mode === 'with') {
                                     item.classList.add('checked');
                                 } else {
                                     item.classList.remove('checked');
@@ -557,7 +587,7 @@
 
             // Логика для надписи "БЕЗ ПРИСАДОК"
             const noAdditivesKey = 'no_additives_label';
-            if (!enable) {
+            if (mode === 'without') {
                 // Добавляем маркер "БЕЗ ПРИСАДОК"
                 const labelName = '{{ _("no_additives") if _("no_additives") != "no_additives" else "БЕЗ ПРИСАДОК" }}';
                 selectedPartsGlobal[noAdditivesKey] = {
