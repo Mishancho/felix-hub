@@ -453,7 +453,7 @@
         let partsIndexByCategory = {};
         async function preloadPartsIndex() {
             try {
-                const resp = await fetch('/api/parts/catalog?active_only=true&lang=ru');
+                const resp = await fetch('/api/parts/catalog?active_only=true&lang={{ g.locale if g.locale else "ru" }}');
                 const catalog = await resp.json();
                 const idx = {};
                 for (const [catName, list] of Object.entries(catalog)) {

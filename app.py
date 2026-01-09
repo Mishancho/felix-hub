@@ -937,6 +937,7 @@ def get_orders():
         status = request.args.get('status')
         plate_number = request.args.get('plate_number')
         mechanic = request.args.get('mechanic')
+        lang = request.args.get('lang')
         
         query = Order.query
         
@@ -951,8 +952,13 @@ def get_orders():
         
         orders = query.order_by(Order.created_at.desc()).all()
         
-        # Админ всегда получает данные на русском языке
-        return jsonify([order.to_dict(lang='ru') for order in orders])
+        if not lang:
+            lang = g.locale if hasattr(g, 'locale') else 'ru'
+        allowed_langs = app.config.get('LANGUAGES') or ['ru', 'en', 'he']
+        if lang not in allowed_langs:
+            lang = 'ru'
+
+        return jsonify([order.to_dict(lang=lang) for order in orders])
     except Exception as e:
         error_msg = str(e)
         
