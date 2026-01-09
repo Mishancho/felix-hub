@@ -336,6 +336,7 @@
                             <div>🔧 <strong>{{ _('mechanic') }}:</strong> {{ order.mechanic_name }}</div>
                             <div>🚗 <strong>{{ _('plate_number') }}:</strong> {{ order.plate_number }}</div>
                             <div>📦 <strong>{{ _('category') }}:</strong> {{ get_category_name(order.category) }}</div>
+                            <div>{{ '🔧' if order.is_original else '💰' }} <strong>{{ _('type') }}:</strong> {{ _('original') if order.is_original else _('analog') }}</div>
                             <div>⏰ <strong>{{ _('created') }}:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
                         </div>
 
