@@ -185,8 +185,28 @@
             margin-top: 30px;
             padding-top: 30px;
             border-top: 2px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
-        
+
+        .order-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            border: 2px solid transparent;
+        }
+
+        .order-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
         .admin-btn {
             display: inline-block;
             padding: 12px 30px;
@@ -285,6 +305,7 @@
             </form>
             
             <div class="admin-link">
+                <a href="/order/create" class="order-btn">📝 {{ _('Создать заказ') }}</a>
                 <a href="/admin" class="admin-btn">👨‍💼 {{ _('Панель администратора') }}</a>
             </div>
         </div>

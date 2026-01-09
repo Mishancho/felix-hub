@@ -781,6 +781,9 @@ msgstr "Login"
 msgid "Панель администратора"
 msgstr "Admin Panel"
 
+msgid "Создать заказ"
+msgstr "Create Order"
+
 # Flash messages
 msgid "Ваш аккаунт деактивирован. Обратитесь к администратору"
 msgstr "Your account is deactivated. Please contact administrator"
