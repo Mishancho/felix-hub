@@ -238,7 +238,7 @@
                     <div class="order-details">
                         <div>🚗 <strong>{{ _('plate_number') }}:</strong> {{ order.plate_number }}</div>
                         <div>📦 <strong>{{ _('category') }}:</strong> {{ get_category_name(order.category) }}</div>
-                        <div>⏰ {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                        <div>⏰ {{ format_dt(order.created_at) }}</div>
                     </div>
                 </div>
                 {% endfor %}

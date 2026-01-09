@@ -390,7 +390,7 @@
                             <strong>{{ _('type') }}:</strong> {{ _('original') if order.is_original else _('analog') }}
                         </div>
                         <div class="detail-item">
-                            ⏰ <strong>{{ _('created') }}:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            ⏰ <strong>{{ _('created') }}:</strong> {{ format_dt(order.created_at) }}
                         </div>
                     </div>
 

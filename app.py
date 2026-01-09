@@ -1,6 +1,7 @@
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, g
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import Babel, gettext, lazy_gettext as _l
@@ -37,6 +38,7 @@ app.config['LANGUAGES'] = {
     'he': 'עברית',
     'ru': 'Русский'
 }
+app.config['APP_TIMEZONE'] = os.getenv('APP_TIMEZONE', 'Asia/Jerusalem')
 
 # Создаем экземпляр Babel (инициализация позже)
 babel = Babel()
@@ -159,6 +161,18 @@ def inject_cache_buster():
         return url_for('static', filename=filename, v=app._static_version)
     
     return dict(static_url=static_url)
+
+@app.context_processor
+def inject_datetime_formatter():
+    def format_dt(dt, fmt='%d.%m.%Y %H:%M', tz_name=None):
+        if not dt:
+            return ''
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        tz = ZoneInfo(tz_name or app.config.get('APP_TIMEZONE', 'Asia/Jerusalem'))
+        return dt.astimezone(tz).strftime(fmt)
+
+    return dict(format_dt=format_dt)
 
 @app.before_request
 def before_request():
