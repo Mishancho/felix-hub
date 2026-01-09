@@ -394,11 +394,12 @@
                         </div>
                     </div>
 
-                    {% if order.selected_parts %}
+                    {% set parts = order.selected_parts_sorted if order.selected_parts_sorted is defined else order.selected_parts %}
+                    {% if parts %}
                     <div class="parts-list">
                         <h4>{{ _('parts') }}:</h4>
                         <ul>
-                            {% for part in order.selected_parts %}
+                            {% for part in parts %}
                                 {% if part is mapping %}
                                     {# Новый формат с количеством #}
                                     <li>
@@ -415,9 +416,9 @@
                         </ul>
                     </div>
                     <div class="add-part-box" style="margin-top:10px;">
-                        <button class="btn btn-secondary" onclick="toggleAddPart({{ order.id }}, '{{ order.category }}')">+ {{ _('add_part') }}</button>
+                        <button class="btn btn-secondary" type="button" data-order-id="{{ order.id }}" data-category="{{ order.category }}" onclick="toggleAddPartFromButton(this)">+ {{ _('add_part') }}</button>
                         {% if order.status == 'новый' %}
-                        <form action="{{ url_for('mechanic_cancel_order', order_id=order.id) }}" method="POST" style="display:inline-block; margin-left: 10px;" onsubmit="return confirm('{{ _('confirm_cancel_order') }}');">
+                        <form action="{{ url_for('mechanic_cancel_order', order_id=order.id) }}" method="POST" style="display:inline-block; margin-left: 10px;" data-confirm="{{ _('confirm_cancel_order') }}" onsubmit="return confirmFromForm(this);">
                             <button type="submit" class="btn" style="background-color: #fee2e2; color: #991b1b; border: 1px solid #991b1b;">{{ _('cancel_order') }}</button>
                         </form>
                         {% endif %}
@@ -426,7 +427,7 @@
                                 <select id="addPartCategory-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
                                 <select id="addPartSelect-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
                                 <input type="number" id="addPartQty-{{ order.id }}" min="1" value="1" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px; width:80px;">
-                                <button class="btn btn-primary" onclick="submitAddPart({{ order.id }})">Добавить</button>
+                                <button class="btn btn-primary" type="button" data-order-id="{{ order.id }}" onclick="submitAddPartFromButton(this)">Добавить</button>
                             </div>
                         </div>
                     </div>
@@ -455,6 +456,18 @@
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
     <script>
         window.addPartCategoryCache = window.addPartCategoryCache || {};
+        function toggleAddPartFromButton(btn) {
+            const orderId = parseInt(btn.dataset.orderId);
+            const category = btn.dataset.category;
+            return toggleAddPart(orderId, category);
+        }
+        function submitAddPartFromButton(btn) {
+            const orderId = parseInt(btn.dataset.orderId);
+            return submitAddPart(orderId);
+        }
+        function confirmFromForm(form) {
+            return confirm(form.dataset.confirm || '');
+        }
         async function toggleAddPart(orderId, category) {
             const form = document.getElementById(`addPartForm-${orderId}`);
             const partSelect = document.getElementById(`addPartSelect-${orderId}`);

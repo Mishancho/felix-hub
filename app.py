@@ -311,7 +311,7 @@ def notify_admin_new_order(order):
     
     # Формируем список деталей с количеством на русском языке
     parts_list = []
-    for part in order.selected_parts:
+    for part in sort_selected_parts_by_sort_order(order.selected_parts or [], order.category):
         if isinstance(part, dict):
             # Новый формат с количеством и опционально part_id
             part_id = part.get('part_id')
@@ -431,6 +431,45 @@ def validate_plate_number(plate_number):
     
     return True
 
+def sort_selected_parts_by_sort_order(parts, category, cache=None):
+    if not parts:
+        return []
+
+    cache = cache if cache is not None else {}
+    mapping = cache.get(category)
+
+    if mapping is None:
+        parts_in_category = Part.query.filter_by(category=category).all()
+        id_to_order = {p.id: (p.sort_order if p.sort_order is not None else 0) for p in parts_in_category}
+        name_to_order = {}
+        for p in parts_in_category:
+            order_val = p.sort_order if p.sort_order is not None else 0
+            for nm in (p.name_ru, p.name_en, p.name_he, p.name):
+                if nm:
+                    name_to_order[nm] = order_val
+        max_order = max([o for o in id_to_order.values()] + [0])
+        mapping = (id_to_order, name_to_order, max_order)
+        cache[category] = mapping
+
+    id_to_order, name_to_order, max_order = mapping
+
+    def sort_key(item, idx):
+        if isinstance(item, dict):
+            pid = item.get('part_id')
+            if isinstance(pid, str) and pid.isdigit():
+                pid = int(pid)
+            nm = item.get('name')
+            if pid in id_to_order:
+                return (id_to_order[pid], idx)
+            if nm in name_to_order:
+                return (name_to_order[nm], idx)
+            return (max_order + 1, idx)
+        if item in name_to_order:
+            return (name_to_order[item], idx)
+        return (max_order + 1, idx)
+
+    return [x for _, x in sorted([(sort_key(it, i), it) for i, it in enumerate(parts)], key=lambda t: t[0])]
+
 def print_receipt(order):
     """Печать чека (симуляция - можно заменить на реальную печать)"""
     # Получаем переведенное название категории на русском
@@ -451,7 +490,7 @@ def print_receipt(order):
 Детали:
 """
     # Выводим детали на русском языке
-    for part in order.selected_parts:
+    for part in sort_selected_parts_by_sort_order(order.selected_parts or [], order.category):
         if isinstance(part, dict):
             # Новый формат с количеством и опционально part_id
             part_id = part.get('part_id')
@@ -613,7 +652,10 @@ def mechanic_orders():
         query = query.filter(Order.plate_number.ilike(f'%{plate_number}%'))
     
     orders = query.order_by(Order.created_at.desc()).all()
-    
+    sort_cache = {}
+    for order in orders:
+        setattr(order, 'selected_parts_sorted', sort_selected_parts_by_sort_order(order.selected_parts or [], order.category, cache=sort_cache))
+
     return render_template('mechanic/orders.html', orders=orders)
 
 
@@ -700,6 +742,7 @@ def public_orders():
 
     orders = query.order_by(Order.created_at.desc()).limit(200).all()
     lang = g.locale if hasattr(g, 'locale') and g.locale else 'ru'
+    sort_cache = {}
 
     part_ids = set()
     for order in orders:
@@ -734,7 +777,7 @@ def public_orders():
                 localized_parts.append(localized_part)
             else:
                 localized_parts.append(part)
-        setattr(order, 'selected_parts_localized', localized_parts)
+        setattr(order, 'selected_parts_localized', sort_selected_parts_by_sort_order(localized_parts, order.category, cache=sort_cache))
 
     return render_template('orders_public.html', orders=orders)
 
@@ -809,6 +852,7 @@ def submit_order():
                     part_entry['part_id'] = part['part_id']
                 
                 normalized_parts.append(part_entry)
+        normalized_parts = sort_selected_parts_by_sort_order(normalized_parts, data['category'])
         
         # Создание нового заказа
         order = Order(
@@ -984,6 +1028,7 @@ def add_part_to_order(order_id):
         if not isinstance(order.selected_parts, list):
             order.selected_parts = []
         order.selected_parts.append(entry)
+        order.selected_parts = sort_selected_parts_by_sort_order(order.selected_parts, order.category)
         flag_modified(order, 'selected_parts')
         order.updated_at = datetime.utcnow()
         db.session.commit()
