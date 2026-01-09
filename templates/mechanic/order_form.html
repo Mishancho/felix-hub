@@ -510,6 +510,13 @@
         const ADDITIVES = ['Присадка для омывателя стёкол', 'Присадка для топлива'];
         let currentAdditivesMode = null; // 'with', 'without', or null
 
+        function normalizeAdditiveKey(value) {
+            return String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/ё/g, 'е');
+        }
+
         function syncRadioGroupActive(group) {
             if (!group) return;
             group.querySelectorAll('.radio-item').forEach(item => {
@@ -572,8 +579,8 @@
                 for (const cat in catalog) {
                     const parts = catalog[cat];
                     const part = parts.find(p => {
-                        const pName = typeof p === 'object' ? p.name : p;
-                        return pName === additiveName;
+                        const pRuName = typeof p === 'object' ? (p.name_ru || p.name) : p;
+                        return normalizeAdditiveKey(pRuName) === normalizeAdditiveKey(additiveName);
                     });
                     if (part) {
                         foundPart = part;
@@ -701,7 +708,7 @@
                     item.classList.add('checked');
                 }
                 
-                const safeId = 'part_' + partName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                const safeId = 'part_' + String(partId || partName).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                 
                 item.innerHTML = `
                     <input type="checkbox" 

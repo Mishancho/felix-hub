@@ -1399,7 +1399,8 @@ def get_parts_catalog():
             # Добавляем запчасть с ID и переведённым названием
             catalog[category_name].append({
                 'id': part.id,
-                'name': part.get_name(lang)
+                'name': part.get_name(lang),
+                'name_ru': part.name_ru or part.name
             })
         
         return jsonify(catalog)
