@@ -656,7 +656,6 @@
                     loadOrders();
                     
                     if (newStatus === 'готово') {
-                        alert(`✅ Заказ #${orderId} помечен как готовый. Механик получит уведомление.`);
                     }
                 } else {
                     alert('❌ Ошибка обновления статуса');
@@ -738,7 +737,6 @@
                             writeReceiptToWindow(w, 'Чек пустой');
                         } catch (e) {
                         }
-                        alert('✅ Чек сформирован');
                     }
                     loadOrders();
                 } else {
