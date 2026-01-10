@@ -162,17 +162,17 @@ def inject_cache_buster():
     
     return dict(static_url=static_url)
 
+def _format_dt(dt, fmt='%d.%m.%Y %H:%M', tz_name=None):
+    if not dt:
+        return ''
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    tz = ZoneInfo(tz_name or app.config.get('APP_TIMEZONE', 'Asia/Jerusalem'))
+    return dt.astimezone(tz).strftime(fmt)
+
 @app.context_processor
 def inject_datetime_formatter():
-    def format_dt(dt, fmt='%d.%m.%Y %H:%M', tz_name=None):
-        if not dt:
-            return ''
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        tz = ZoneInfo(tz_name or app.config.get('APP_TIMEZONE', 'Asia/Jerusalem'))
-        return dt.astimezone(tz).strftime(fmt)
-
-    return dict(format_dt=format_dt)
+    return dict(format_dt=_format_dt)
 
 @app.before_request
 def before_request():
@@ -369,7 +369,7 @@ def notify_admin_new_order(order):
 {parts_text}
 
 {'🔧 Оригинал' if order.is_original else '💰 Аналог'}
-⏰ {order.created_at.strftime('%d.%m.%Y %H:%M')}
+⏰ {_format_dt(order.created_at)}
 """
     
     if order.comment:
