@@ -100,9 +100,10 @@
             order: 0;
         }
         
-        .lang-flag span {
-            display: inline-block;
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+        .lang-flag img {
+            width: 28px;
+            height: 20px;
+            display: block;
         }
         
         .lang-flag:hover {
@@ -265,13 +266,13 @@
             <!-- Переключатель языков -->
             <div class="lang-buttons">
                 <button type="button" class="lang-flag {% if g.locale == 'ru' %}active{% endif %}" onclick="switchLanguage('ru')" title="Русский">
-                    <span>🇷🇺</span>
+                    <img src="{{ url_for('static', filename='Icons/rus.svg') }}" alt="Русский">
                 </button>
                 <button type="button" class="lang-flag {% if g.locale == 'en' %}active{% endif %}" onclick="switchLanguage('en')" title="English">
-                    <span>🇬🇧</span>
+                    <img src="{{ url_for('static', filename='Icons/gb.svg') }}" alt="English">
                 </button>
                 <button type="button" class="lang-flag {% if g.locale == 'he' %}active{% endif %}" onclick="switchLanguage('he')" title="עברית">
-                    <span>🇮🇱</span>
+                    <img src="{{ url_for('static', filename='Icons/israel.svg') }}" alt="עברית">
                 </button>
             </div>
             

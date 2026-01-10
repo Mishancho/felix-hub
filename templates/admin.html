@@ -362,13 +362,13 @@
                     <div class="lang-buttons">
                         <a href="/set_language/ru?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'ru' else '' }}" 
-                           title="Русский">🇷🇺</a>
+                           title="Русский"><img src="{{ url_for('static', filename='Icons/rus.svg') }}" alt="Русский"></a>
                         <a href="/set_language/en?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'en' else '' }}" 
-                           title="English">🇬🇧</a>
+                           title="English"><img src="{{ url_for('static', filename='Icons/gb.svg') }}" alt="English"></a>
                         <a href="/set_language/he?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'he' else '' }}" 
-                           title="עברית">🇮🇱</a>
+                           title="עברית"><img src="{{ url_for('static', filename='Icons/israel.svg') }}" alt="עברית"></a>
                     </div>
                 </div>
                 <a href="/" class="btn btn-white">← {{ _('home') }}</a>

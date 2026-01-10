@@ -35,6 +35,13 @@
     border-radius: 2px;
 }
 
+.lang-btn img {
+    width: 18px;
+    height: 12px;
+    display: block;
+    border-radius: 2px;
+}
+
 .lang-btn:hover {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
