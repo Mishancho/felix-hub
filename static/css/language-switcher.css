@@ -28,6 +28,13 @@
     backdrop-filter: blur(10px);
 }
 
+.lang-btn svg {
+    width: 18px;
+    height: 12px;
+    display: block;
+    border-radius: 2px;
+}
+
 .lang-btn:hover {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
