@@ -695,10 +695,16 @@
 </head>
 <body>
   <pre>${escaped}</pre>
-  <script>window.focus(); window.print();</script>
 </body>
 </html>`);
             w.document.close();
+            setTimeout(() => {
+                try {
+                    w.focus();
+                    w.print();
+                } catch (e) {
+                }
+            }, 50);
             return true;
         }
 
