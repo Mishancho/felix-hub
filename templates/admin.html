@@ -667,13 +667,7 @@
             }
         }
         
-        function openReceiptPrintWindow(receiptText) {
-            const w = window.open('', '_blank', 'noopener,noreferrer,width=420,height=720');
-            if (!w) {
-                alert('⚠️ Браузер заблокировал окно печати. Разрешите pop-up и повторите.');
-                return false;
-            }
-
+        function writeReceiptToWindow(w, receiptText) {
             const safe = String(receiptText ?? '');
             const escaped = safe
                 .replace(/&/g, '&amp;')
@@ -698,18 +692,21 @@
 </body>
 </html>`);
             w.document.close();
-            setTimeout(() => {
-                try {
-                    w.focus();
-                    w.print();
-                } catch (e) {
-                }
-            }, 50);
-            return true;
         }
 
         // Печать чека
         async function printOrder(orderId) {
+            const w = window.open('', '_blank', 'width=420,height=720');
+            if (!w) {
+                alert('⚠️ Браузер заблокировал окно печати. Разрешите pop-up и повторите.');
+                return;
+            }
+
+            try {
+                writeReceiptToWindow(w, 'Загрузка чека...');
+            } catch (e) {
+            }
+
             try {
                 const response = await fetch(`/api/orders/${orderId}/print`, {
                     method: 'POST'
@@ -719,17 +716,45 @@
 
                 if (response.ok) {
                     if (data && data.receipt) {
-                        openReceiptPrintWindow(data.receipt);
+                        try {
+                            writeReceiptToWindow(w, data.receipt);
+                        } catch (e) {
+                            try {
+                                w.close();
+                            } catch (e2) {
+                            }
+                            alert('❌ Не удалось сформировать окно печати');
+                            return;
+                        }
+                        setTimeout(() => {
+                            try {
+                                w.focus();
+                                w.print();
+                            } catch (e) {
+                            }
+                        }, 50);
                         alert('✅ Открыт диалог печати');
                     } else {
+                        try {
+                            writeReceiptToWindow(w, 'Чек пустой');
+                        } catch (e) {
+                        }
                         alert('✅ Чек сформирован');
                     }
                     loadOrders();
                 } else {
+                    try {
+                        writeReceiptToWindow(w, data && data.error ? String(data.error) : 'Ошибка печати');
+                    } catch (e) {
+                    }
                     alert(`❌ Ошибка печати${data && data.error ? ': ' + data.error : ''}`);
                 }
             } catch (error) {
                 console.error('Ошибка:', error);
+                try {
+                    writeReceiptToWindow(w, 'Ошибка печати');
+                } catch (e) {
+                }
                 alert('❌ Ошибка печати');
             }
         }
