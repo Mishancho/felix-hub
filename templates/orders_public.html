@@ -161,6 +161,98 @@
             font-weight: 600;
         }
 
+        .table-toolbar {
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .table-toolbar .page-size {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .table-toolbar select {
+            padding: 6px 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .table-toolbar select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+
+        .pagination {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .page-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .page-btn {
+            padding: 4px 8px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 800;
+            color: #111827;
+            transition: all 0.15s ease;
+            font-size: 12px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .page-btn:hover {
+            border-color: #667eea;
+            color: #4f46e5;
+        }
+
+        .page-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .page-btn.active {
+            border-color: #667eea;
+            color: #4f46e5;
+        }
+
+        .page-info {
+            color: #6b7280;
+            font-weight: 800;
+            font-size: 12px;
+        }
+
         .orders {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -305,6 +397,8 @@
     <div class="container">
         <div class="filters">
             <form method="GET" action="{{ url_for('public_orders') }}">
+                <input type="hidden" name="page" value="1">
+                <input type="hidden" name="page_size" value="{{ page_size }}">
                 <div class="filters-grid">
                     <div class="filter-group">
                         <label for="status">{{ _('status') }}</label>
@@ -341,9 +435,12 @@
         </div>
 
         <div class="summary">
-            <div>{{ _('found') }}: {{ orders|length }}</div>
+            <div>{{ _('found') }}: {{ total_orders }}</div>
             <div>{{ _('auto_refresh_30s') }}</div>
         </div>
+
+        {% set shown_start = ((page - 1) * page_size + 1) if total_orders else 0 %}
+        {% set shown_end = (shown_start + (orders|length) - 1) if total_orders else 0 %}
 
         {% if orders %}
             <div class="orders">
@@ -391,10 +488,106 @@
                     </div>
                 {% endfor %}
             </div>
+
+            <div style="margin-top: 16px;">
+                <div class="table-toolbar">
+                    <div class="page-info" id="ordersSummary">Показано {{ shown_start }}-{{ shown_end }} из {{ total_orders }}</div>
+                    <div class="page-size">
+                        <span>На странице:</span>
+                        <select id="pageSizeSelect">
+                            <option value="15" {% if page_size == 15 %}selected{% endif %}>15</option>
+                            <option value="25" {% if page_size == 25 %}selected{% endif %}>25</option>
+                            <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+                </div>
+
+                {% if total_pages > 1 %}
+                    {% set args = request.args.to_dict() %}
+                    {% set window_size = 2 %}
+                    {% set start = [1, page - window_size] | max %}
+                    {% set end = [total_pages, page + window_size] | min %}
+                    {% if page <= 1 + window_size %}
+                        {% set end = [total_pages, 1 + window_size * 2 + 1] | min %}
+                    {% endif %}
+                    {% if page >= total_pages - window_size %}
+                        {% set start = [1, total_pages - window_size * 2 - 1] | max %}
+                    {% endif %}
+
+                    <div class="pagination">
+                        <div class="page-buttons">
+                            <a class="page-btn {% if page == 1 %}disabled{% endif %}"
+                               href="{{ url_for('public_orders', **args, page=page-1, page_size=page_size) }}">←</a>
+
+                            {% if start > 1 %}
+                                <a class="page-btn" href="{{ url_for('public_orders', **args, page=1, page_size=page_size) }}">1</a>
+                                {% if start > 2 %}
+                                    <span class="page-info">…</span>
+                                {% endif %}
+                            {% endif %}
+
+                            {% for p in range(start, end + 1) %}
+                                <a class="page-btn {% if p == page %}active{% endif %}"
+                                   href="{{ url_for('public_orders', **args, page=p, page_size=page_size) }}">{{ p }}</a>
+                            {% endfor %}
+
+                            {% if end < total_pages %}
+                                {% if end < total_pages - 1 %}
+                                    <span class="page-info">…</span>
+                                {% endif %}
+                                <a class="page-btn" href="{{ url_for('public_orders', **args, page=total_pages, page_size=page_size) }}">{{ total_pages }}</a>
+                            {% endif %}
+
+                            <a class="page-btn {% if page == total_pages %}disabled{% endif %}"
+                               href="{{ url_for('public_orders', **args, page=page+1, page_size=page_size) }}">→</a>
+                        </div>
+                        <div class="page-info">Стр. {{ page }} / {{ total_pages }}</div>
+                    </div>
+                {% endif %}
+            </div>
         {% else %}
             <div class="empty">{{ _('no_orders_found') }}</div>
         {% endif %}
     </div>
+    <script>
+        (function() {
+            const allowed = new Set([15, 25, 50, 100]);
+            const key = 'publicOrdersPageSize';
+            const params = new URLSearchParams(window.location.search);
+            const urlPageSize = parseInt(params.get('page_size') || '', 10);
+            let saved = 25;
+            try {
+                const raw = localStorage.getItem(key);
+                const n = parseInt(raw || '', 10);
+                if (allowed.has(n)) saved = n;
+            } catch (_) {
+            }
+
+            if (!allowed.has(urlPageSize)) {
+                params.set('page_size', String(saved));
+                params.set('page', '1');
+                const next = `${window.location.pathname}?${params.toString()}`;
+                window.location.replace(next);
+                return;
+            }
+
+            const select = document.getElementById('pageSizeSelect');
+            if (!select) return;
+            select.value = String(urlPageSize);
+            select.addEventListener('change', () => {
+                const v = parseInt(select.value, 10);
+                if (!allowed.has(v)) return;
+                try {
+                    localStorage.setItem(key, String(v));
+                } catch (_) {
+                }
+                params.set('page_size', String(v));
+                params.set('page', '1');
+                window.location.href = `${window.location.pathname}?${params.toString()}`;
+            });
+        })();
+    </script>
     <div style="text-align: center; padding: 18px 12px; color: #9ca3af; font-size: 12px;">Developed by Vorokhovskii Mikhail</div>
 </body>
 </html>

@@ -873,6 +873,25 @@ def public_orders():
     plate_number = request.args.get('plate_number', '').strip()
     mechanic = request.args.get('mechanic', '').strip()
     order_id = request.args.get('order_id', '').strip()
+    page_raw = request.args.get('page', '1')
+    page_size_raw = request.args.get('page_size', '25')
+
+    try:
+        page = int(page_raw)
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        page_size = int(page_size_raw)
+    except (TypeError, ValueError):
+        page_size = 25
+
+    if page < 1:
+        page = 1
+
+    allowed_page_sizes = {15, 25, 50, 100}
+    if page_size not in allowed_page_sizes:
+        page_size = 25
 
     query = Order.query
 
@@ -888,7 +907,17 @@ def public_orders():
     if mechanic:
         query = query.filter(Order.mechanic_name.ilike(f'%{mechanic}%'))
 
-    orders = query.order_by(Order.created_at.desc()).limit(200).all()
+    total_orders = query.count()
+    total_pages = max(1, (total_orders + page_size - 1) // page_size) if page_size > 0 else 1
+    if page > total_pages:
+        page = total_pages
+
+    orders = (
+        query.order_by(Order.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
     lang = g.locale if hasattr(g, 'locale') and g.locale else 'ru'
     sort_cache = {}
     no_additives_aliases_cf = {
@@ -949,7 +978,14 @@ def public_orders():
                     localized_parts.append(part)
         setattr(order, 'selected_parts_localized', sort_selected_parts_by_sort_order(localized_parts, order.category, cache=sort_cache))
 
-    return render_template('orders_public.html', orders=orders)
+    return render_template(
+        'orders_public.html',
+        orders=orders,
+        total_orders=total_orders,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages
+    )
 
 
 @app.route('/api/submit_order', methods=['POST'])
