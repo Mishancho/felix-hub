@@ -394,12 +394,20 @@ def notify_mechanic_order_ready(order):
     if not telegram_id:
         return
     
-    message = f"""✅ <b>Заказ №{order.id} готов!</b>
+    category_obj = Category.query.filter(
+        (Category.name == order.category) |
+        (Category.name_ru == order.category) |
+        (Category.name_en == order.category) |
+        (Category.name_he == order.category)
+    ).first()
+    category_name = category_obj.get_name('he') if category_obj else order.category
+    
+    message = f"""✅ <b>הזמנה מס׳ {order.id} מוכנה!</b>
 
-🚗 Авто: <b>{order.plate_number}</b>
-📦 Категория: {order.category}
+🚗 רכב: <code>{order.plate_number}</code>
+📦 קטגוריה: {category_name}
 
-Забери детали у кладовщика 📦"""
+אפשר לאסוף את החלקים אצל המחסנאי 📦"""
     
     send_telegram_message(telegram_id, message)
 
@@ -1700,7 +1708,7 @@ def get_parts():
 def get_parts_categories():
     """Получить список всех категорий с переводами"""
     try:
-        lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
+        lang = request.args.get('lang') or 'ru'
         
         # Получаем категории из таблицы Category
         categories = Category.query.filter_by(is_active=True).order_by(Category.sort_order, Category.name).all()
@@ -1725,7 +1733,8 @@ def get_parts_catalog():
     """Получить весь каталог в формате {категория: [запчасти с ID]}"""
     try:
         active_only = request.args.get('active_only', 'true').lower() == 'true'
-        lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
+        lang_param = request.args.get('lang')
+        lang = lang_param or 'ru'
         
         query = Part.query
         if active_only:
@@ -1741,10 +1750,10 @@ def get_parts_catalog():
         for part in parts:
             # Получаем переведённое название категории
             category_obj = categories.get(part.category)
-            if category_obj:
+            if category_obj and lang_param:
                 category_name = category_obj.get_name(lang)
             else:
-                category_name = part.category  # Fallback на оригинальное название
+                category_name = part.category
             
             if category_name not in catalog:
                 catalog[category_name] = []
@@ -2220,11 +2229,13 @@ def init_db():
 # Миграции выполняются через run_migrations.py после деплоя
 
 # Автоматические миграции при старте (для Render)
-try:
-    from migrations_auto import run_auto_migrations
-    run_auto_migrations(app)
-except Exception as e:
-    print(f"⚠️  Автоматические миграции пропущены: {e}")
+import sys as _sys
+if 'unittest' not in _sys.modules and not os.environ.get('PYTEST_CURRENT_TEST'):
+    try:
+        from migrations_auto import run_auto_migrations
+        run_auto_migrations(app)
+    except Exception as e:
+        print(f"⚠️  Автоматические миграции пропущены: {e}")
 
 print("="*60)
 print("🚀 Felix Hub готов к запуску")
