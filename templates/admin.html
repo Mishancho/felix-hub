@@ -304,6 +304,10 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            /* Не позволяем номеру переноситься на следующую строку */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .copy-plate-btn {
@@ -321,6 +325,12 @@
             line-height: 1;
             padding: 0;
             user-select: none;
+        }
+
+        /* Гарантируем что сам текст номера не будет переноситься */
+        .plate-with-copy strong,
+        .plate-with-copy .plate-number {
+            white-space: nowrap;
         }
 
         .copy-plate-btn:hover {
@@ -803,6 +813,24 @@
                 .replace(/'/g, '&#039;');
         }
 
+        // Форматирование гос номера: 7 цифр -> XX-XXX-XX, 8 цифр -> XXX-XX-XXX
+        function formatPlateNumber(plate) {
+            if (!plate) return '';
+            const digits = String(plate).replace(/\D/g, '');
+            if (digits.length === 7) {
+                return digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5,7);
+            } else if (digits.length === 8) {
+                return digits.slice(0,3) + '-' + digits.slice(3,5) + '-' + digits.slice(5,8);
+            }
+            return plate; // вернуть как есть если не подходит
+        }
+
+        // Получить номер без дефисов для копирования
+        function getPlateForCopy(plate) {
+            if (!plate) return '';
+            return String(plate).replace(/\D/g, '');
+        }
+
         async function copyTextToClipboard(text) {
             const value = String(text ?? '').trim();
             if (!value) return false;
@@ -1001,15 +1029,16 @@
                 const map = partsIndexByCategory[order.category];
                 const selectedParts = Array.isArray(order.selected_parts) ? [...order.selected_parts] : [];
                 if (map) selectedParts.sort((a, b) => partOrderIndex(a, map) - partOrderIndex(b, map));
-                const plateNumberEscaped = escapeHtml(order.plate_number);
+                const plateFormatted = escapeHtml(formatPlateNumber(order.plate_number));
+                const plateForCopy = getPlateForCopy(order.plate_number);
                 html += `
                     <tr>
                         <td><strong>#${order.id}</strong></td>
                         <td>${order.mechanic_name}</td>
                         <td>
                             <span class="plate-with-copy">
-                                <strong>${plateNumberEscaped}</strong>
-                                <button type="button" class="copy-plate-btn" data-copy-plate="${plateNumberEscaped}" title="Копировать" aria-label="Копировать гос номер">⧉</button>
+                                <strong>${plateFormatted}</strong>
+                                <button type="button" class="copy-plate-btn" data-copy-plate="${plateForCopy}" title="Копировать" aria-label="Копировать гос номер">⧉</button>
                             </span>
                         </td>
                         <td>${order.category}</td>
