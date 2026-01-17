@@ -1001,7 +1001,9 @@
                                             const qty = p.quantity > 1 ? ` <strong style="color: #667eea;">(x${p.quantity})</strong>` : '';
                                             const added = p.added_by_mechanic ? ' <span class="added-badge">➕</span>' : '';
                                             const partType = p.hasOwnProperty('is_original') 
-                                                ? (p.is_original ? ' <span class="type-badge type-original" style="font-size:0.75em;padding:2px 6px;">💎</span>' : ' <span class="type-badge type-analog" style="font-size:0.75em;padding:2px 6px;">🔄</span>')
+                                                ? (p.is_original 
+                                                    ? ' <span class="type-badge type-original" style="font-size:0.7em;padding:2px 6px;margin-left:4px;">ориг</span>' 
+                                                    : ' <span class="type-badge type-analog" style="font-size:0.7em;padding:2px 6px;margin-left:4px;">аналог</span>')
                                                 : '';
                                             return `<li>${escapeHtml(p.name)}${qty}${partType}${added}</li>`;
                                         } else {
