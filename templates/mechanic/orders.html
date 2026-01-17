@@ -407,6 +407,13 @@
                                         {% if part.quantity > 1 %}
                                             <strong style="color: #667eea;">(x{{ part.quantity }})</strong>
                                         {% endif %}
+                                        {% if part.is_original is defined %}
+                                            {% if part.is_original %}
+                                                <span style="background: #d1e7dd; color: #0f5132; padding: 2px 6px; border-radius: 8px; font-size: 0.75em; font-weight: 700;">💎</span>
+                                            {% else %}
+                                                <span style="background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 8px; font-size: 0.75em; font-weight: 700;">🔄</span>
+                                            {% endif %}
+                                        {% endif %}
                                     </li>
                                 {% else %}
                                     {# Старый формат (просто строка) #}
