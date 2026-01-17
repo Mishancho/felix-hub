@@ -329,6 +329,9 @@ class Order(db.Model):
                             'name': part_name,
                             'quantity': quantity
                         }
+                        # Копируем is_original для каждой детали
+                        if 'is_original' in part:
+                            item['is_original'] = part['is_original']
                         if added_flag is not None:
                             item['added_by_mechanic'] = added_flag
                         if added_at:
@@ -340,6 +343,9 @@ class Order(db.Model):
                             'name': part.get('name', 'Unknown'),
                             'quantity': quantity
                         }
+                        # Копируем is_original для каждой детали
+                        if 'is_original' in part:
+                            item['is_original'] = part['is_original']
                         if added_flag is not None:
                             item['added_by_mechanic'] = added_flag
                         if added_at:
@@ -356,6 +362,9 @@ class Order(db.Model):
                             'name': name,
                             'quantity': quantity
                         }
+                        # Копируем is_original для каждой детали
+                        if 'is_original' in part:
+                            item['is_original'] = part['is_original']
                         if added_flag is not None:
                             item['added_by_mechanic'] = added_flag
                         if added_at:
