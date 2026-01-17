@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="{{ g.locale or 'ru' }}" dir="{{ 'rtl' if g.locale == 'he' else 'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Felix Hub - {{ _('orders_status_board') }}">
+    <meta name="theme-color" content="#667eea">
+    <meta http-equiv="refresh" content="30">
+    <title>Felix Hub - {{ _('orders_status_board') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/language-switcher.css') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-size: 1.4em;
+            font-weight: 800;
+        }
+
+        .header-titles {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .header-subtitle {
+            font-weight: 700;
+            opacity: 0.95;
+            font-size: 0.92em;
+            margin-top: 2px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #4f46e5;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.35);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 22px 20px;
+        }
+
+        .filters {
+            background: white;
+            padding: 18px;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 18px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: 700;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+
+        .btn-apply {
+            width: 100%;
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-apply:hover {
+            background: #5568d3;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0 18px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .table-toolbar {
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .table-toolbar .page-size {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .table-toolbar select {
+            padding: 6px 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .table-toolbar select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+
+        .pagination {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .page-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .page-btn {
+            padding: 4px 8px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 800;
+            color: #111827;
+            transition: all 0.15s ease;
+            font-size: 12px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .page-btn:hover {
+            border-color: #667eea;
+            color: #4f46e5;
+        }
+
+        .page-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .page-btn.active {
+            border-color: #667eea;
+            color: #4f46e5;
+        }
+
+        .page-info {
+            color: #6b7280;
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        .orders {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 14px;
+        }
+
+        .order-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+
+        .order-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .order-id {
+            font-weight: 900;
+            color: #111827;
+            font-size: 18px;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .status-badge.status-новый { background: #dbeafe; color: #1e40af; }
+        .status-badge.status-в-работе { background: #fef3c7; color: #b45309; }
+        .status-badge.status-готово { background: #d1fae5; color: #047857; }
+        .status-badge.status-выдано { background: #e5e7eb; color: #374151; }
+        .status-badge.status-отменено, .status-badge.status-отменён { background: #fee2e2; color: #991b1b; }
+
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.35;
+        }
+
+        .order-details strong {
+            color: #111827;
+        }
+
+        .parts-list {
+            margin-top: 12px;
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .parts-list h4 {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .parts-list ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .parts-list li {
+            padding: 4px 0;
+            color: #111827;
+            font-size: 14px;
+        }
+
+        .parts-list li:before {
+            content: "• ";
+            color: #667eea;
+            font-weight: 900;
+        }
+
+        .comment-box {
+            margin-top: 10px;
+            background: #fef3c7;
+            color: #78350f;
+            border-radius: 10px;
+            padding: 10px 12px;
+            border-left: 4px solid #f59e0b;
+            font-size: 14px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px 16px;
+            color: #9ca3af;
+            font-weight: 700;
+            background: white;
+            border-radius: 14px;
+            border: 2px dashed #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-titles">
+                <h1>📺 <span dir="ltr">Felix Hub</span></h1>
+                <div class="header-subtitle">{{ _('orders_status_board') }}</div>
+            </div>
+            <div class="header-actions">
+                <div class="language-switcher">
+                    <div class="lang-buttons">
+                        <a href="/set_language/ru?redirect={{ request.full_path }}"
+                           class="lang-btn {{ 'active' if g.locale == 'ru' else '' }}"
+                           title="Русский">
+                            <img src="{{ url_for('static', filename='Icons/rus.svg') }}" alt="Русский">
+                        </a>
+                        <a href="/set_language/en?redirect={{ request.full_path }}"
+                           class="lang-btn {{ 'active' if g.locale == 'en' else '' }}"
+                           title="English">
+                            <img src="{{ url_for('static', filename='Icons/gb.svg') }}" alt="English">
+                        </a>
+                        <a href="/set_language/he?redirect={{ request.full_path }}"
+                           class="lang-btn {{ 'active' if g.locale == 'he' else '' }}"
+                           title="עברית">
+                            <img src="{{ url_for('static', filename='Icons/israel.svg') }}" alt="עברית">
+                        </a>
+                    </div>
+                </div>
+                <a href="/order/create" class="btn btn-primary">+ {{ _('new_order') }}</a>
+                <a href="{{ request.full_path }}" class="btn btn-secondary">{{ _('refresh') }}</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="filters">
+            <form method="GET" action="{{ url_for('public_orders') }}">
+                <input type="hidden" name="page" value="1">
+                <input type="hidden" name="page_size" value="{{ page_size }}">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="status">{{ _('status') }}</label>
+                        <select id="status" name="status">
+                            <option value="все" {% if request.args.get('status', 'все') == 'все' %}selected{% endif %}>{{ _('all') }}</option>
+                            <option value="новый" {% if request.args.get('status') == 'новый' %}selected{% endif %}>{{ _('status_new') }}</option>
+                            <option value="в работе" {% if request.args.get('status') == 'в работе' %}selected{% endif %}>{{ _('status_in_progress') }}</option>
+                            <option value="готово" {% if request.args.get('status') == 'готово' %}selected{% endif %}>{{ _('status_ready') }}</option>
+                            <option value="выдано" {% if request.args.get('status') == 'выдано' %}selected{% endif %}>{{ _('status_delivered') }}</option>
+                            <option value="отменено" {% if request.args.get('status') == 'отменено' or request.args.get('status') == 'отменён' %}selected{% endif %}>{{ _('status_cancelled') }}</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="plate_number">{{ _('plate_number') }}</label>
+                        <input type="text" id="plate_number" name="plate_number" value="{{ request.args.get('plate_number', '') }}" placeholder="{{ _('search_by_plate') }}">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="mechanic">{{ _('mechanic') }}</label>
+                        <input type="text" id="mechanic" name="mechanic" value="{{ request.args.get('mechanic', '') }}" placeholder="{{ _('mechanic_name') }}">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="order_id">{{ _('order') }} #</label>
+                        <input type="text" id="order_id" name="order_id" value="{{ request.args.get('order_id', '') }}" placeholder="{{ _('order_id') }}">
+                    </div>
+
+                    <div class="filter-group">
+                        <button type="submit" class="btn btn-apply">{{ _('apply') }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="summary">
+            <div>{{ _('found') }}: {{ total_orders }}</div>
+            <div>{{ _('auto_refresh_30s') }}</div>
+        </div>
+
+        {% set shown_start = ((page - 1) * page_size + 1) if total_orders else 0 %}
+        {% set shown_end = (shown_start + (orders|length) - 1) if total_orders else 0 %}
+
+        {% if orders %}
+            <div class="orders">
+                {% for order in orders %}
+                    <div class="order-card">
+                        <div class="order-top">
+                            <div class="order-id">{{ _('order') }} №{{ order.id }}</div>
+                            <span class="status-badge status-{{ order.status|replace(' ', '-') }}">{{ get_status_translation(order.status) }}</span>
+                        </div>
+
+                        <div class="order-details">
+                            <div>🔧 <strong>{{ _('mechanic') }}:</strong> {{ order.mechanic_name }}</div>
+                            <div>🚗 <strong>{{ _('plate_number') }}:</strong> {{ order.plate_number }}</div>
+                            <div>📦 <strong>{{ _('category') }}:</strong> {{ get_category_name(order.category) }}</div>
+                            <div>{{ '🔧' if order.is_original else '💰' }} <strong>{{ _('type') }}:</strong> {{ _('original') if order.is_original else _('analog') }}</div>
+                            <div>⏰ <strong>{{ _('created') }}:</strong> {{ format_dt(order.created_at) }}</div>
+                        </div>
+
+                        {% set parts = order.selected_parts_localized if order.selected_parts_localized is defined else order.selected_parts %}
+                        {% if parts %}
+                            <div class="parts-list">
+                                <h4>{{ _('order_contents') }}</h4>
+                                <ul>
+                                    {% for part in parts %}
+                                        {% if part is mapping %}
+                                            <li>
+                                                {{ part.name }}
+                                                {% if part.quantity and part.quantity > 1 %}
+                                                    <strong style="color: #667eea;">(x{{ part.quantity }})</strong>
+                                                {% endif %}
+                                            </li>
+                                        {% else %}
+                                            <li>{{ part }}</li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        {% if order.comment %}
+                            <div class="comment-box">
+                                <strong>{{ _('comment') }}:</strong> {{ order.comment }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top: 16px;">
+                <div class="table-toolbar">
+                    <div class="page-info" id="ordersSummary">Показано {{ shown_start }}-{{ shown_end }} из {{ total_orders }}</div>
+                    <div class="page-size">
+                        <span>На странице:</span>
+                        <select id="pageSizeSelect">
+                            <option value="15" {% if page_size == 15 %}selected{% endif %}>15</option>
+                            <option value="25" {% if page_size == 25 %}selected{% endif %}>25</option>
+                            <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+                </div>
+
+                {% if total_pages > 1 %}
+                    {% set qs = base_query %}
+                    {% if qs %}
+                        {% set qs = qs ~ '&' %}
+                    {% endif %}
+                    {% set window_size = 2 %}
+                    {% set start = [1, page - window_size] | max %}
+                    {% set end = [total_pages, page + window_size] | min %}
+                    {% if page <= 1 + window_size %}
+                        {% set end = [total_pages, 1 + window_size * 2 + 1] | min %}
+                    {% endif %}
+                    {% if page >= total_pages - window_size %}
+                        {% set start = [1, total_pages - window_size * 2 - 1] | max %}
+                    {% endif %}
+
+                    <div class="pagination">
+                        <div class="page-buttons">
+                            <a class="page-btn {% if page == 1 %}disabled{% endif %}"
+                               href="{{ url_for('public_orders') }}?{{ qs }}page={{ page - 1 }}">←</a>
+
+                            {% if start > 1 %}
+                                <a class="page-btn" href="{{ url_for('public_orders') }}?{{ qs }}page=1">1</a>
+                                {% if start > 2 %}
+                                    <span class="page-info">…</span>
+                                {% endif %}
+                            {% endif %}
+
+                            {% for p in range(start, end + 1) %}
+                                <a class="page-btn {% if p == page %}active{% endif %}"
+                                   href="{{ url_for('public_orders') }}?{{ qs }}page={{ p }}">{{ p }}</a>
+                            {% endfor %}
+
+                            {% if end < total_pages %}
+                                {% if end < total_pages - 1 %}
+                                    <span class="page-info">…</span>
+                                {% endif %}
+                                <a class="page-btn" href="{{ url_for('public_orders') }}?{{ qs }}page={{ total_pages }}">{{ total_pages }}</a>
+                            {% endif %}
+
+                            <a class="page-btn {% if page == total_pages %}disabled{% endif %}"
+                               href="{{ url_for('public_orders') }}?{{ qs }}page={{ page + 1 }}">→</a>
+                        </div>
+                        <div class="page-info">Стр. {{ page }} / {{ total_pages }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="empty">{{ _('no_orders_found') }}</div>
+        {% endif %}
+    </div>
+    <script>
+        (function() {
+            const allowed = new Set([15, 25, 50, 100]);
+            const key = 'publicOrdersPageSize';
+            const params = new URLSearchParams(window.location.search);
+            const urlPageSize = parseInt(params.get('page_size') || '', 10);
+            let saved = 25;
+            try {
+                const raw = localStorage.getItem(key);
+                const n = parseInt(raw || '', 10);
+                if (allowed.has(n)) saved = n;
+            } catch (_) {
+            }
+
+            if (!allowed.has(urlPageSize)) {
+                params.set('page_size', String(saved));
+                params.set('page', '1');
+                const next = `${window.location.pathname}?${params.toString()}`;
+                window.location.replace(next);
+                return;
+            }
+
+            const select = document.getElementById('pageSizeSelect');
+            if (!select) return;
+            select.value = String(urlPageSize);
+            select.addEventListener('change', () => {
+                const v = parseInt(select.value, 10);
+                if (!allowed.has(v)) return;
+                try {
+                    localStorage.setItem(key, String(v));
+                } catch (_) {
+                }
+                params.set('page_size', String(v));
+                params.set('page', '1');
+                window.location.href = `${window.location.pathname}?${params.toString()}`;
+            });
+        })();
+    </script>
+    <div style="text-align: center; padding: 18px 12px; color: #9ca3af; font-size: 12px;">Developed by Vorokhovskii Mikhail</div>
+</body>
+</html>

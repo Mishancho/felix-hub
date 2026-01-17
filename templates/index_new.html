@@ -97,6 +97,12 @@
             font-size: 1.3em;
             background: white;
         }
+
+        .lang-flag img {
+            width: 28px;
+            height: 20px;
+            display: block;
+        }
         
         .lang-flag:hover {
             border-color: #667eea;
@@ -231,9 +237,9 @@
             
             <!-- Переключатель языков -->
             <div class="lang-buttons">
-                <button class="lang-flag {{ 'active' if g.locale == 'ru' else '' }}" onclick="switchLanguage('ru')" title="Русский">🇷🇺</button>
-                <button class="lang-flag {{ 'active' if g.locale == 'en' else '' }}" onclick="switchLanguage('en')" title="English">🇬🇧</button>
-                <button class="lang-flag {{ 'active' if g.locale == 'he' else '' }}" onclick="switchLanguage('he')" title="עברית">🇮🇱</button>
+                <button class="lang-flag {{ 'active' if g.locale == 'ru' else '' }}" onclick="switchLanguage('ru')" title="Русский"><img src="{{ url_for('static', filename='Icons/rus.svg') }}" alt="Русский"></button>
+                <button class="lang-flag {{ 'active' if g.locale == 'en' else '' }}" onclick="switchLanguage('en')" title="English"><img src="{{ url_for('static', filename='Icons/gb.svg') }}" alt="English"></button>
+                <button class="lang-flag {{ 'active' if g.locale == 'he' else '' }}" onclick="switchLanguage('he')" title="עברית"><img src="{{ url_for('static', filename='Icons/israel.svg') }}" alt="עברית"></button>
             </div>
             
             <!-- Форма входа -->
@@ -293,5 +299,6 @@
         }
     </script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
+    <div style="text-align: center; padding: 18px 12px; color: #9ca3af; font-size: 12px;">Developed by Vorokhovskii Mikhail</div>
 </body>
 </html>

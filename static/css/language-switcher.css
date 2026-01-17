@@ -3,7 +3,7 @@
 .language-switcher {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap:  8px;
 }
 
 .lang-buttons {
@@ -13,8 +13,12 @@
 }
 
 .lang-btn {
-    width: 36px;
-    height: 36px;
+    width: 36px ! important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -26,6 +30,35 @@
     text-decoration: none;
     font-size: 18px;
     backdrop-filter: blur(10px);
+    flex-shrink: 0; /* Запрет сжатия кнопки */
+    overflow: hidden; /* Обрезка выходящего за границы контента */
+    padding: 0 ! important;
+}
+
+.lang-btn svg {
+    width: 18px ! important;
+    height: 12px !important;
+    min-width: 18px !important;
+    min-height: 12px !important;
+    max-width: 18px !important;
+    max-height: 12px !important;
+    display: block;
+    border-radius: 2px;
+    object-fit: contain;
+    object-position: center;
+}
+
+.lang-btn img {
+    width: 18px !important;
+    height:  12px !important;
+    min-width: 18px !important;
+    min-height: 12px !important;
+    max-width: 18px !important;
+    max-height: 12px !important;
+    display: block;
+    border-radius: 2px;
+    object-fit: contain; /* Сохраняем пропорции */
+    object-position: center; /* Центрируем изображение */
 }
 
 .lang-btn:hover {
@@ -35,13 +68,13 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.lang-btn.active {
+.lang-btn. active {
     background: white;
     border-color: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.lang-btn.active:hover {
+. lang-btn. active: hover {
     transform: translateY(-2px);
 }
 
@@ -49,10 +82,10 @@
 .lang-selector {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap:  8px;
 }
 
-.lang-icon {
+. lang-icon {
     font-size: 18px;
     line-height: 1;
 }
@@ -75,7 +108,7 @@
     color: #3498db;
 }
 
-.lang-select:focus {
+. lang-select:focus {
     background: #e8f4f8;
 }
 
@@ -109,7 +142,7 @@
     flex-direction: row-reverse;
 }
 
-[dir="rtl"] .action-buttons {
+[dir="rtl"] . action-buttons {
     flex-direction: row-reverse;
 }
 
@@ -123,7 +156,7 @@
 }
 
 [dir="rtl"] .modal-header {
-    flex-direction: row-reverse;
+    flex-direction:  row-reverse;
 }
 
 [dir="rtl"] .form-group label {
@@ -144,13 +177,13 @@
     flex-direction: row-reverse;
 }
 
-[dir="rtl"] .filters {
+[dir="rtl"] . filters {
     direction: rtl;
 }
 
 /* Анимация смены языка */
-.lang-transition {
-    transition: all 0.3s ease;
+. lang-transition {
+    transition:  all 0.3s ease;
 }
 
 body.lang-switching {
@@ -173,9 +206,23 @@ body.lang-ru {
 /* Адаптация для мобильных */
 @media (max-width: 768px) {
     .lang-btn {
-        width: 32px;
-        height: 32px;
+        width: 32px ! important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        max-width: 32px !important;
+        max-height: 32px !important;
         font-size: 16px;
+    }
+    
+    .lang-btn img,
+    .lang-btn svg {
+        width: 16px !important;
+        height:  11px !important;
+        min-width: 16px !important;
+        min-height: 11px !important;
+        max-width: 16px !important;
+        max-height: 11px !important;
     }
     
     .lang-buttons {
@@ -185,9 +232,23 @@ body.lang-ru {
 
 @media (max-width: 480px) {
     .lang-btn {
-        width: 28px;
-        height: 28px;
+        width: 28px !important;
+        height:  28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        max-width: 28px !important;
+        max-height: 28px !important;
         font-size: 14px;
+    }
+    
+    .lang-btn img,
+    .lang-btn svg {
+        width: 14px !important;
+        height:  10px !important;
+        min-width: 14px ! important;
+        min-height:  10px !important;
+        max-width: 14px ! important;
+        max-height:  10px !important;
     }
     
     .lang-buttons {

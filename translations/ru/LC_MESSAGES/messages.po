@@ -619,6 +619,15 @@ msgstr "Телефон"
 msgid "save_changes"
 msgstr "Сохранить изменения"
 
+msgid "orders_status_board"
+msgstr "Статус заказов"
+
+msgid "auto_refresh_30s"
+msgstr "Автообновление: 30 сек"
+
+msgid "order_contents"
+msgstr "Что в заказе"
+
 msgid "change_password"
 msgstr "Смена пароля"
 
@@ -781,6 +790,9 @@ msgstr "Войти"
 msgid "Панель администратора"
 msgstr "Панель администратора"
 
+msgid "Создать заказ"
+msgstr "Создать заказ"
+
 # Flash сообщения
 msgid "Ваш аккаунт деактивирован. Обратитесь к администратору"
 msgstr "Ваш аккаунт деактивирован. Обратитесь к администратору"
@@ -790,3 +802,26 @@ msgstr "Добро пожаловать, %(name)s!"
 
 msgid "Неверное имя пользователя или пароль"
 msgstr "Неверное имя пользователя или пароль"
+
+msgid "part_already_added"
+msgstr "Деталь уже добавлена"
+
+msgid "cancel_order"
+msgstr "Отменить заказ"
+
+msgid "confirm_cancel_order"
+msgstr "Вы уверены, что хотите отменить заказ?"
+
+msgid "additives"
+msgstr "Присадки"
+
+msgid "with_additives"
+msgstr "С присадками"
+
+msgid "without_additives"
+msgstr "Без присадок"
+
+msgid "no_additives"
+msgstr "БЕЗ ПРИСАДОК"
+
+# Updated additives translations

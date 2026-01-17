@@ -80,6 +80,41 @@
             margin-bottom: 30px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
+
+        .filters.filters-compact {
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .filters.filters-compact .filters-grid {
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 0;
+        }
+
+        .filters.filters-compact .filter-group label {
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .filters.filters-compact .filter-group input,
+        .filters.filters-compact .filter-group select {
+            padding: 7px 9px;
+            border-width: 1px;
+            font-size: 13px;
+        }
+
+        .filters.filters-compact .filter-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filters.filters-compact .filter-actions .btn {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
         
         .filters-grid {
             display: grid;
@@ -157,6 +192,91 @@
             color: #333;
             font-size: 1.5em;
         }
+
+        .table-toolbar {
+            padding: 8px 18px;
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .table-toolbar .page-size {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .table-toolbar select {
+            padding: 6px 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .table-toolbar select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .pagination {
+            padding: 8px 18px;
+            background: white;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .page-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .page-btn {
+            padding: 4px 8px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            color: #333;
+            transition: all 0.15s ease;
+            font-size: 12px;
+        }
+
+        .page-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .page-btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-btn.active {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .page-info {
+            color: #666;
+            font-weight: 700;
+            font-size: 12px;
+        }
         
         table {
             width: 100%;
@@ -178,6 +298,45 @@
         td {
             padding: 15px;
             border-bottom: 1px solid #f0f0f0;
+        }
+
+        .plate-with-copy {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-plate-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            height: auto;
+            border: none;
+            background: transparent;
+            border-radius: 0;
+            cursor: pointer;
+            color: #374151;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0;
+            user-select: none;
+        }
+
+        .copy-plate-btn:hover {
+            color: #111827;
+        }
+
+        .copy-plate-btn:active {
+            color: #111827;
+        }
+
+        .copy-plate-btn:focus {
+            outline: none;
+        }
+
+        .copy-plate-btn:focus-visible {
+            outline: none;
         }
         
         tbody tr:hover {
@@ -207,7 +366,7 @@
             color: #0f5132;
         }
         
-        .status-отменён {
+        .status-отменён, .status-отменено {
             background: #f8d7da;
             color: #721c24;
         }
@@ -362,13 +521,13 @@
                     <div class="lang-buttons">
                         <a href="/set_language/ru?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'ru' else '' }}" 
-                           title="Русский">🇷🇺</a>
+                           title="Русский"><img src="{{ url_for('static', filename='Icons/rus.svg') }}" alt="Русский"></a>
                         <a href="/set_language/en?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'en' else '' }}" 
-                           title="English">🇬🇧</a>
+                           title="English"><img src="{{ url_for('static', filename='Icons/gb.svg') }}" alt="English"></a>
                         <a href="/set_language/he?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'he' else '' }}" 
-                           title="עברית">🇮🇱</a>
+                           title="עברית"><img src="{{ url_for('static', filename='Icons/israel.svg') }}" alt="עברית"></a>
                     </div>
                 </div>
                 <a href="/" class="btn btn-white">← {{ _('home') }}</a>
@@ -406,7 +565,7 @@
         </div>
         
         <!-- Фильтры -->
-        <div class="filters">
+        <div class="filters filters-compact">
             <div class="filters-grid">
                 <div class="filter-group">
                     <label>{{ _('status') }}</label>
@@ -415,7 +574,7 @@
                         <option value="новый">{{ _('new') }}</option>
                         <option value="в работе">{{ _('in_progress') }}</option>
                         <option value="готово">{{ _('ready') }}</option>
-                        <option value="отменён">{{ _('cancelled') }}</option>
+                        <option value="отменено">{{ _('cancelled') }}</option>
                     </select>
                 </div>
                 
@@ -428,10 +587,23 @@
                     <label>{{ _('mechanic') }}</label>
                     <input type="text" id="filterMechanic" placeholder="{{ _('mechanic_name') }}">
                 </div>
+
+                <div class="filter-group">
+                    <label>Дата с</label>
+                    <input type="date" id="filterDateFrom">
+                </div>
+
+                <div class="filter-group">
+                    <label>Дата по</label>
+                    <input type="date" id="filterDateTo">
+                </div>
                 
                 <div class="filter-group">
                     <label>&nbsp;</label>
-                    <button class="btn btn-info" onclick="loadOrders()" style="width: 100%;">🔄 {{ _('refresh') }}</button>
+                    <div class="filter-actions">
+                        <button class="btn btn-info" onclick="loadOrders()">🔄 {{ _('refresh') }}</button>
+                        <button class="btn btn-danger" onclick="resetOrderFilters()">✖ Сброс</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -445,15 +617,142 @@
             <div id="tableContent" class="table-wrapper">
                 <div class="loading">⏳ Загрузка данных...</div>
             </div>
+
+            <div class="table-toolbar">
+                <div class="page-info" id="ordersSummary"></div>
+                <div class="page-size">
+                    <span>На странице:</span>
+                    <select id="pageSizeSelect">
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="paginationControls" class="pagination" style="display:none;"></div>
         </div>
     </div>
     
     <script>
         let orders = [];
+        let pageSize = 25;
+        let currentPage = 1;
         let partsIndexByCategory = {};
+        let refreshTimerId = null;
+        let loadOrdersInFlight = false;
+
+        function startAutoRefresh() {
+            if (refreshTimerId) clearInterval(refreshTimerId);
+            const intervalMs = document.hidden ? 30000 : 5000;
+            refreshTimerId = setInterval(loadOrders, intervalMs);
+        }
+
+        function loadSavedPageSize() {
+            try {
+                const raw = localStorage.getItem('adminOrdersPageSize');
+                const n = parseInt(raw, 10);
+                if ([15, 25, 50, 100].includes(n)) return n;
+            } catch (_) {
+            }
+            return 25;
+        }
+
+        function setPageSize(newSize) {
+            if (![15, 25, 50, 100].includes(newSize)) return;
+            pageSize = newSize;
+            currentPage = 1;
+            try {
+                localStorage.setItem('adminOrdersPageSize', String(newSize));
+            } catch (_) {
+            }
+            renderOrders();
+        }
+
+        function totalPages() {
+            return Math.max(1, Math.ceil(orders.length / pageSize));
+        }
+
+        function clampCurrentPage() {
+            const tp = totalPages();
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > tp) currentPage = tp;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            clampCurrentPage();
+            renderOrders();
+        }
+
+        function renderPaginationControls() {
+            const controls = document.getElementById('paginationControls');
+            const summary = document.getElementById('ordersSummary');
+            if (!controls || !summary) return;
+
+            if (orders.length === 0) {
+                controls.style.display = 'none';
+                summary.textContent = '';
+                return;
+            }
+
+            clampCurrentPage();
+
+            const total = orders.length;
+            const tp = totalPages();
+            const startIdx = (currentPage - 1) * pageSize;
+            const endIdx = Math.min(startIdx + pageSize, total);
+            summary.textContent = `Показано ${startIdx + 1}-${endIdx} из ${total}`;
+
+            if (tp <= 1) {
+                controls.style.display = 'none';
+                controls.innerHTML = '';
+                return;
+            }
+
+            controls.style.display = 'flex';
+
+            const windowSize = 2;
+            let start = Math.max(1, currentPage - windowSize);
+            let end = Math.min(tp, currentPage + windowSize);
+            if (currentPage <= 1 + windowSize) end = Math.min(tp, 1 + windowSize * 2 + 1);
+            if (currentPage >= tp - windowSize) start = Math.max(1, tp - windowSize * 2 - 1);
+
+            const pageBtns = [];
+            const pushPage = (p) => {
+                pageBtns.push(
+                    `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`
+                );
+            };
+
+            const pushEllipsis = () => pageBtns.push(`<span class="page-info">…</span>`);
+
+            if (start > 1) {
+                pushPage(1);
+                if (start > 2) pushEllipsis();
+            }
+
+            for (let p = start; p <= end; p++) pushPage(p);
+
+            if (end < tp) {
+                if (end < tp - 1) pushEllipsis();
+                pushPage(tp);
+            }
+
+            controls.innerHTML = `
+                <div class="page-buttons">
+                    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">←</button>
+                    ${pageBtns.join('')}
+                    <button class="page-btn" ${currentPage === tp ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">→</button>
+                </div>
+                <div class="page-info">Стр. ${currentPage} / ${tp}</div>
+            `;
+        }
+
         async function preloadPartsIndex() {
             try {
-                const resp = await fetch('/api/parts/catalog?active_only=true&lang=ru');
+                const resp = await fetch('/api/parts/catalog?active_only=true&lang={{ g.locale if g.locale else "ru" }}');
                 const catalog = await resp.json();
                 const idx = {};
                 for (const [catName, list] of Object.entries(catalog)) {
@@ -493,31 +792,123 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
+
+        async function copyTextToClipboard(text) {
+            const value = String(text ?? '').trim();
+            if (!value) return false;
+
+            try {
+                if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                    await navigator.clipboard.writeText(value);
+                    return true;
+                }
+            } catch (_) {
+            }
+
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = value;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                ta.style.top = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                ta.setSelectionRange(0, ta.value.length);
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                return ok;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function bindPlateCopyButtons(root) {
+            if (!root) return;
+            root.querySelectorAll('button[data-copy-plate]').forEach((btn) => {
+                if (btn.dataset.boundCopyPlate === '1') return;
+                btn.dataset.boundCopyPlate = '1';
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await copyTextToClipboard(btn.getAttribute('data-copy-plate'));
+                });
+            });
+        }
+
+        function parseApiDateTime(value) {
+            if (!value) return null;
+            if (value instanceof Date) return value;
+
+            const s = String(value).trim();
+            if (!s) return null;
+
+            const looksLikeSql = /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?/.test(s);
+            const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(s);
+
+            let iso = s;
+            if (looksLikeSql) iso = iso.replace(' ', 'T');
+            if (!hasTimezone && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?/.test(iso)) iso = `${iso}Z`;
+
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return null;
+            return d;
+        }
+
+        function formatOrderCreatedAt(value) {
+            const d = parseApiDateTime(value);
+            if (!d) return '';
+            return d.toLocaleString('ru-RU');
+        }
         
         // Загрузка заказов при старте
         window.addEventListener('DOMContentLoaded', () => {
+            pageSize = loadSavedPageSize();
+            const pageSizeSelect = document.getElementById('pageSizeSelect');
+            if (pageSizeSelect) {
+                pageSizeSelect.value = String(pageSize);
+                pageSizeSelect.addEventListener('change', () => {
+                    const newSize = parseInt(pageSizeSelect.value, 10);
+                    setPageSize(newSize);
+                });
+            }
             preloadPartsIndex().finally(() => {
                 loadOrders();
-                setInterval(loadOrders, 30000);
-                document.getElementById('filterStatus').addEventListener('change', loadOrders);
-                document.getElementById('filterPlate').addEventListener('input', debounce(loadOrders, 500));
-                document.getElementById('filterMechanic').addEventListener('input', debounce(loadOrders, 500));
+                startAutoRefresh();
+                document.getElementById('filterStatus').addEventListener('change', () => { currentPage = 1; loadOrders(); });
+                document.getElementById('filterPlate').addEventListener('input', debounce(() => { currentPage = 1; loadOrders(); }, 500));
+                document.getElementById('filterMechanic').addEventListener('input', debounce(() => { currentPage = 1; loadOrders(); }, 500));
+                document.getElementById('filterDateFrom').addEventListener('change', () => { currentPage = 1; loadOrders(); });
+                document.getElementById('filterDateTo').addEventListener('change', () => { currentPage = 1; loadOrders(); });
             });
+        });
+
+        document.addEventListener('visibilitychange', startAutoRefresh);
+        window.addEventListener('focus', () => {
+            loadOrders();
+            startAutoRefresh();
         });
         
         // Загрузка заказов с сервера
         async function loadOrders() {
+            if (loadOrdersInFlight) return;
+            loadOrdersInFlight = true;
             try {
                 const status = document.getElementById('filterStatus').value;
                 const plate = document.getElementById('filterPlate').value;
                 const mechanic = document.getElementById('filterMechanic').value;
+                const createdFrom = document.getElementById('filterDateFrom').value;
+                const createdTo = document.getElementById('filterDateTo').value;
                 
                 let url = '/api/orders?';
-                if (status !== 'все') url += `status=${status}&`;
+                if (status !== 'все') url += `status=${encodeURIComponent(status)}&`;
                 if (plate) url += `plate_number=${encodeURIComponent(plate)}&`;
                 if (mechanic) url += `mechanic=${encodeURIComponent(mechanic)}&`;
+                if (createdFrom) url += `created_from=${encodeURIComponent(createdFrom)}&`;
+                if (createdTo) url += `created_to=${encodeURIComponent(createdTo)}&`;
+                url += `_=${Date.now()}&`;
                 
-                const response = await fetch(url);
+                const response = await fetch(url, { cache: 'no-store' });
                 orders = await response.json();
                 
                 renderOrders();
@@ -526,7 +917,27 @@
                 console.error('Ошибка загрузки заказов:', error);
                 document.getElementById('tableContent').innerHTML = 
                     '<div class="empty-state">❌ Ошибка загрузки данных</div>';
+            } finally {
+                loadOrdersInFlight = false;
             }
+        }
+
+        function resetOrderFilters() {
+            const statusEl = document.getElementById('filterStatus');
+            const plateEl = document.getElementById('filterPlate');
+            const mechanicEl = document.getElementById('filterMechanic');
+            const fromEl = document.getElementById('filterDateFrom');
+            const toEl = document.getElementById('filterDateTo');
+
+            if (statusEl) statusEl.value = 'все';
+            if (plateEl) plateEl.value = '';
+            if (mechanicEl) mechanicEl.value = '';
+            if (fromEl) fromEl.value = '';
+            if (toEl) toEl.value = '';
+
+            currentPage = 1;
+            loadOrders();
+            startAutoRefresh();
         }
         
         // Отрисовка таблицы заказов
@@ -534,6 +945,7 @@
             const content = document.getElementById('tableContent');
             
             if (orders.length === 0) {
+                renderPaginationControls();
                 content.innerHTML = `
                     <div class="empty-state">
                         <p style="font-size: 3em;">📦</p>
@@ -542,6 +954,10 @@
                 `;
                 return;
             }
+
+            clampCurrentPage();
+            const startIdx = (currentPage - 1) * pageSize;
+            const pageOrders = orders.slice(startIdx, startIdx + pageSize);
             
             let html = `
                 <table>
@@ -561,15 +977,21 @@
                     <tbody>
             `;
             
-            orders.forEach(order => {
+            pageOrders.forEach(order => {
                 const map = partsIndexByCategory[order.category];
                 const selectedParts = Array.isArray(order.selected_parts) ? [...order.selected_parts] : [];
                 if (map) selectedParts.sort((a, b) => partOrderIndex(a, map) - partOrderIndex(b, map));
+                const plateNumberEscaped = escapeHtml(order.plate_number);
                 html += `
                     <tr>
                         <td><strong>#${order.id}</strong></td>
                         <td>${order.mechanic_name}</td>
-                        <td><strong>${order.plate_number}</strong></td>
+                        <td>
+                            <span class="plate-with-copy">
+                                <strong>${plateNumberEscaped}</strong>
+                                <button type="button" class="copy-plate-btn" data-copy-plate="${plateNumberEscaped}" title="Копировать" aria-label="Копировать гос номер">⧉</button>
+                            </span>
+                        </td>
                         <td>${order.category}</td>
                         <td>
                             <div class="parts-list">
@@ -605,10 +1027,11 @@
                                 <option value="новый" ${order.status === 'новый' ? 'selected' : ''}>Новый</option>
                                 <option value="в работе" ${order.status === 'в работе' ? 'selected' : ''}>В работе</option>
                                 <option value="готово" ${order.status === 'готово' ? 'selected' : ''}>Готово</option>
-                                <option value="отменён" ${order.status === 'отменён' ? 'selected' : ''}>Отменён</option>
+                                <option value="выдано" ${order.status === 'выдано' ? 'selected' : ''}>Выдано</option>
+                                <option value="отменено" ${order.status === 'отменено' || order.status === 'отменён' ? 'selected' : ''}>Отменено</option>
                             </select>
                         </td>
-                        <td>${new Date(order.created_at).toLocaleString('ru-RU')}</td>
+                        <td>${formatOrderCreatedAt(order.created_at)}</td>
                         <td>
                             <div class="action-buttons">
                                 <button class="btn btn-sm btn-info" onclick="printOrder(${order.id})">
@@ -625,6 +1048,8 @@
             
             html += '</tbody></table>';
             content.innerHTML = html;
+            bindPlateCopyButtons(content);
+            renderPaginationControls();
         }
         
         // Обновление статистики
@@ -655,7 +1080,6 @@
                     loadOrders();
                     
                     if (newStatus === 'готово') {
-                        alert(`✅ Заказ #${orderId} помечен как готовый. Механик получит уведомление.`);
                     }
                 } else {
                     alert('❌ Ошибка обновления статуса');
@@ -666,23 +1090,92 @@
             }
         }
         
+        function writeReceiptToWindow(w, receiptText) {
+            const safe = String(receiptText ?? '');
+            const escaped = safe
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            w.document.open();
+            w.document.write(`<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Печать чека</title>
+  <style>
+    html,body{margin:0;padding:0;background:#fff;}
+    pre{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; line-height:1.25; white-space:pre-wrap; word-break:break-word; padding:12px;}
+    @media print { pre { font-size: 10px; } }
+  </style>
+</head>
+<body>
+  <pre>${escaped || 'Чек пустой'}</pre>
+</body>
+</html>`);
+            w.document.close();
+        }
+
         // Печать чека
         async function printOrder(orderId) {
+            const w = window.open('', '_blank', 'width=420,height=720');
+            if (!w) {
+                alert('⚠️ Браузер заблокировал окно печати. Разрешите pop-up и повторите.');
+                return;
+            }
+
+            try {
+                writeReceiptToWindow(w, 'Загрузка чека...');
+            } catch (e) {
+            }
+
             try {
                 const response = await fetch(`/api/orders/${orderId}/print`, {
                     method: 'POST'
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
-                    alert('✅ Чек отправлен на печать');
+                    if (data && data.receipt) {
+                        try {
+                            writeReceiptToWindow(w, data.receipt);
+                        } catch (e) {
+                            try {
+                                w.close();
+                            } catch (e2) {
+                            }
+                            alert('❌ Не удалось сформировать окно печати');
+                            return;
+                        }
+                        setTimeout(() => {
+                            try {
+                                w.focus();
+                                w.print();
+                            } catch (e) {
+                            }
+                        }, 50);
+                    } else {
+                        try {
+                            writeReceiptToWindow(w, 'Чек пустой');
+                        } catch (e) {
+                        }
+                    }
                     loadOrders();
                 } else {
-                    alert('❌ Ошибка печати');
+                    try {
+                        writeReceiptToWindow(w, data && data.error ? String(data.error) : 'Ошибка печати');
+                    } catch (e) {
+                    }
+                    alert(`❌ Ошибка печати${data && data.error ? ': ' + data.error : ''}`);
                 }
             } catch (error) {
                 console.error('Ошибка:', error);
+                try {
+                    writeReceiptToWindow(w, 'Ошибка печати');
+                } catch (e) {
+                }
                 alert('❌ Ошибка печати');
             }
         }
@@ -722,5 +1215,6 @@
     <script src="/static/js/language.js"></script>
     <script src="/static/js/language-switcher.js"></script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
+    <div style="text-align: center; padding: 18px 12px; color: #9ca3af; font-size: 12px;">Developed by Vorokhovskii Mikhail</div>
 </body>
 </html>

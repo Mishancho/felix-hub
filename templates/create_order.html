@@ -26,14 +26,13 @@
             margin: 0;
         }
         
-        /* Стили шапки и навигации перенесены в fixed-header-nav.css */
-        
         .main-content {
             display: flex;
             justify-content: center;
             padding: 20px;
             flex-direction: column;
             align-items: center;
+            margin-top: 60px; /* Offset for fixed header */
         }
 
         .container {
@@ -44,37 +43,6 @@
             padding: 40px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             margin-top: 0;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-            display: none;
-        }
-
-        .header h1 {
-            color: #333;
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .header .subtitle {
-            color: #666;
-            font-size: 16px;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
         }
 
         .form-group {
@@ -194,6 +162,48 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
+        
+        /* Переключатель оригинал/аналог для каждой детали */
+        .checkbox-item .part-type-toggle {
+            display: none;
+            gap: 4px;
+            margin-left: 8px;
+        }
+        
+        .checkbox-item.checked .part-type-toggle {
+            display: flex;
+        }
+        
+        .part-type-toggle .type-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #f8f9fa;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .part-type-toggle .type-btn:hover {
+            border-color: #667eea;
+        }
+        
+        .part-type-toggle .type-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .part-type-toggle .type-btn.original.active {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        
+        .part-type-toggle .type-btn.analog.active {
+            background: #f59e0b;
+            border-color: #f59e0b;
+        }
 
         .radio-group {
             display: flex;
@@ -263,12 +273,6 @@
             transform: translateY(-2px);
         }
 
-        .btn-submit:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
         .btn-submit:active {
             transform: translateY(0);
         }
@@ -334,6 +338,22 @@
             cursor: pointer;
             margin-top: 10px;
         }
+
+        .header-link {
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            transition: transform 0.2s;
+            white-space: nowrap;
+        }
+
+        .header-link:hover {
+            transform: translateY(-1px);
+        }
         
         /* RTL Fixes */
         [dir="rtl"] .checkbox-group {
@@ -364,16 +384,10 @@
                 gap: 10px;
             }
             
-            .btn-header {
-                padding: 8px 15px;
-                font-size: 0.9em;
-            }
-            
             .container {
                 padding: 30px 20px;
             }
             
-            /* Исправление прокрутки для select на мобильных */
             select {
                 font-size: 16px !important;
                 -webkit-appearance: menulist-button;
@@ -407,19 +421,7 @@
                            title="עברית"><img src="{{ url_for('static', filename='Icons/israel.svg') }}" alt="עברית"></a>
                     </div>
                 </div>
-                <a href="{{ url_for('mechanic_logout') }}" class="btn-logout">{{ _('logout') }}</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="nav-wrapper">
-        <div class="nav-container">
-            <div class="nav">
-                <a href="{{ url_for('mechanic_dashboard') }}">{{ _('home') }}</a>
-                <a href="{{ url_for('mechanic_orders') }}">{{ _('my_orders') }}</a>
-                <a href="{{ url_for('mechanic_new_order') }}" class="active">{{ _('new_order') }}</a>
-                <a href="{{ url_for('mechanic_profile') }}">{{ _('profile') }}</a>
-                <a href="{{ url_for('mechanic_settings') }}">{{ _('settings') }}</a>
+                <a href="/orders" class="header-link">📺 {{ _('orders_status_board') }}</a>
             </div>
         </div>
     </div>
@@ -429,6 +431,17 @@
         <div id="alert-container"></div>
 
         <form id="orderForm">
+            <!-- Выбор механика -->
+            <div class="form-group">
+                <label for="mechanic_id">{{ _('full_name') }} *</label>
+                <select id="mechanic_id" name="mechanic_id" required>
+                    <option value="">-- {{ _('select') if _('select') != 'select' else 'Выберите' }} --</option>
+                    {% for mechanic in mechanics %}
+                    <option value="{{ mechanic.id }}">{{ mechanic.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="form-group">
                 <label for="plate_number">{{ _('plate_number') }} *</label>
                 <input type="text" 
@@ -502,7 +515,6 @@
         </form>
         </div>
     </div>
-</div>
 
     <script>
         let catalog = {};
@@ -716,6 +728,12 @@
                 
                 const safeId = 'part_' + String(partId || partName).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                 
+                // Получаем значение is_original из сохранённых данных или из глобального переключателя
+                const globalIsOriginal = document.querySelector('input[name="is_original"]:checked').value === 'true';
+                const partIsOriginal = isChecked && selectedPartsGlobal[partKey].hasOwnProperty('is_original') 
+                    ? selectedPartsGlobal[partKey].is_original 
+                    : globalIsOriginal;
+                
                 item.innerHTML = `
                     <input type="checkbox" 
                            id="${safeId}"
@@ -724,6 +742,12 @@
                            data-part-id="${partId || ''}"
                            ${isChecked ? 'checked' : ''}>
                     <span class="part-name">${partName}</span>
+                    <div class="part-type-toggle">
+                        <span class="type-btn original ${partIsOriginal ? 'active' : ''}" 
+                              onclick="event.stopPropagation(); setPartType(this, true)">💎 {{ _('original') if _('original') != 'original' else 'Ориг' }}</span>
+                        <span class="type-btn analog ${!partIsOriginal ? 'active' : ''}" 
+                              onclick="event.stopPropagation(); setPartType(this, false)">🔄 {{ _('analog') if _('analog') != 'analog' else 'Аналог' }}</span>
+                    </div>
                     <div class="quantity-control">
                         <label>{{ _('quantity') if _('quantity') != 'quantity' else 'Кол-во' }}:</label>
                         <input type="number" 
@@ -747,11 +771,16 @@
                     // Переключаем класс checked на родительском label
                     if (this.checked) {
                         item.classList.add('checked');
+                        // Получаем текущее значение is_original из переключателя детали или глобального
+                        const typeToggle = item.querySelector('.part-type-toggle');
+                        const isOriginal = typeToggle.querySelector('.type-btn.original').classList.contains('active');
+                        
                         // Добавляем в глобальный объект с количеством и ID
                         selectedPartsGlobal[partKey] = {
                             name: this.value,
                             quantity: parseInt(quantityInput.value) || 1,
-                            part_id: partId ? parseInt(partId) : null
+                            part_id: partId ? parseInt(partId) : null,
+                            is_original: isOriginal
                         };
                     } else {
                         item.classList.remove('checked');
@@ -787,6 +816,46 @@
                 counter.textContent = '{{ _("selected") if _("selected") != "selected" else "Выбрано" }}: ' + total;
             }
         }
+        
+        // Установка типа детали (оригинал/аналог) для конкретной позиции
+        function setPartType(btn, isOriginal) {
+            const toggle = btn.closest('.part-type-toggle');
+            const item = btn.closest('.checkbox-item');
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            
+            // Обновляем UI
+            toggle.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Обновляем данные если деталь выбрана
+            if (checkbox && checkbox.checked) {
+                const partId = checkbox.getAttribute('data-part-id');
+                const partKey = partId || checkbox.value;
+                if (selectedPartsGlobal[partKey]) {
+                    selectedPartsGlobal[partKey].is_original = isOriginal;
+                }
+            }
+        }
+        
+        // Применение глобального типа ко всем деталям
+        function applyGlobalPartType(isOriginal) {
+            // Обновляем все видимые переключатели
+            document.querySelectorAll('.part-type-toggle').forEach(toggle => {
+                toggle.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+                if (isOriginal) {
+                    toggle.querySelector('.type-btn.original').classList.add('active');
+                } else {
+                    toggle.querySelector('.type-btn.analog').classList.add('active');
+                }
+            });
+            
+            // Обновляем все выбранные детали в selectedPartsGlobal
+            for (const key in selectedPartsGlobal) {
+                if (!selectedPartsGlobal[key].is_label) { // Не меняем для меток типа "БЕЗ ПРИСАДОК"
+                    selectedPartsGlobal[key].is_original = isOriginal;
+                }
+            }
+        }
 
         // Добавление ручной детали
         function addManualPart() {
@@ -819,11 +888,6 @@
         // Отправка формы
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            if (this.dataset.submitting === '1') return;
-            this.dataset.submitting = '1';
-
-            const submitButton = this.querySelector('button[type="submit"]');
-            if (submitButton) submitButton.disabled = true;
 
             const alertContainer = document.getElementById('alert-container');
             
@@ -835,7 +899,8 @@
                 const part = selectedPartsGlobal[key];
                 const partData = {
                     name: part.name,
-                    quantity: part.quantity
+                    quantity: part.quantity,
+                    is_original: part.hasOwnProperty('is_original') ? part.is_original : (document.querySelector('input[name="is_original"]:checked').value === 'true')
                 };
                 
                 // Если есть part_id, добавляем его для перевода
@@ -867,12 +932,13 @@
                         {{ _('select_at_least_one_part') }}
                     </div>
                 `;
-                this.dataset.submitting = '0';
-                if (submitButton) submitButton.disabled = false;
                 return;
             }
 
+            const mechanicId = document.getElementById('mechanic_id').value;
+
             const formData = {
+                mechanic_id: mechanicId,
                 plate_number: document.getElementById('plate_number').value,
                 category: document.getElementById('category').value,
                 selected_parts: selectedParts,
@@ -898,31 +964,18 @@
                         </div>
                     `;
                     
-                    // Очистка формы и глобального объекта
-                    document.getElementById('orderForm').reset();
-                    document.getElementById('partsList').innerHTML = '<p style="color: #999; font-size: 14px;">{{ _("select_category_first") }}</p>';
-                    document.getElementById('manualParts').innerHTML = '';
-                    selectedPartsGlobal = {}; // Очищаем глобальный объект
-                    currentAdditivesMode = null;
-                    document.querySelectorAll('input[name="additives_mode"]').forEach(i => {
-                        i.checked = false;
-                    });
-                    const additivesGroup = document.getElementById('additives-group');
-                    syncRadioGroupActive(additivesGroup);
-                    toggleAdditives(null);
+                    window.scrollTo(0, 0);
 
-                    // Перенаправление через 2 секунды
+                    const redirectUrl = `/orders`;
                     setTimeout(() => {
-                        window.location.href = '/mechanic/orders';
-                    }, 2000);
+                        window.location.assign(redirectUrl);
+                    }, 1200);
                 } else {
                     alertContainer.innerHTML = `
                         <div class="alert alert-error">
                             ❌ {{ _('error') }}: ${result.error}
                         </div>
                     `;
-                    this.dataset.submitting = '0';
-                    if (submitButton) submitButton.disabled = false;
                 }
             } catch (error) {
                 alertContainer.innerHTML = `
@@ -930,16 +983,21 @@
                         ❌ {{ _('submission_error') }}: ${error.message}
                     </div>
                 `;
-                this.dataset.submitting = '0';
-                if (submitButton) submitButton.disabled = false;
             }
         });
         
-        // Загрузка каталога при загрузке страницы
         initRadioGroups();
         toggleAdditives(null);
         syncRadioGroupActive(document.getElementById('additives-group'));
         loadCatalog();
+        
+        // Обработчик глобального переключателя оригинал/аналог
+        document.querySelectorAll('input[name="is_original"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const isOriginal = this.value === 'true';
+                applyGlobalPartType(isOriginal);
+            });
+        });
     </script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>

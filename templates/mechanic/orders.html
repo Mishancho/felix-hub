@@ -305,13 +305,13 @@
                     <div class="lang-buttons">
                         <a href="/set_language/ru?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'ru' else '' }}" 
-                           title="Русский">🇷🇺</a>
+                           title="Русский"><img src="{{ url_for('static', filename='Icons/rus.svg') }}" alt="Русский"></a>
                         <a href="/set_language/en?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'en' else '' }}" 
-                           title="English">🇬🇧</a>
+                           title="English"><img src="{{ url_for('static', filename='Icons/gb.svg') }}" alt="English"></a>
                         <a href="/set_language/he?redirect={{ request.path }}" 
                            class="lang-btn {{ 'active' if g.locale == 'he' else '' }}" 
-                           title="עברית">🇮🇱</a>
+                           title="עברית"><img src="{{ url_for('static', filename='Icons/israel.svg') }}" alt="עברית"></a>
                     </div>
                 </div>
                 <a href="{{ url_for('mechanic_logout') }}" class="btn-logout">{{ _('logout') }}</a>
@@ -375,7 +375,7 @@
                 <div class="order-card">
                     <div class="order-top">
                         <div class="order-id">{{ _('order') }} №{{ order.id }}</div>
-                        <span class="status-badge {{ order.status }}">{{ order.status }}</span>
+                        <span class="status-badge {{ order.status }}">{{ get_status_translation(order.status) }}</span>
                     </div>
 
                     <div class="order-details">
@@ -390,15 +390,16 @@
                             <strong>{{ _('type') }}:</strong> {{ _('original') if order.is_original else _('analog') }}
                         </div>
                         <div class="detail-item">
-                            ⏰ <strong>{{ _('created') }}:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            ⏰ <strong>{{ _('created') }}:</strong> {{ format_dt(order.created_at) }}
                         </div>
                     </div>
 
-                    {% if order.selected_parts %}
+                    {% set parts = order.selected_parts_localized if order.selected_parts_localized is defined else (order.selected_parts_sorted if order.selected_parts_sorted is defined else order.selected_parts) %}
+                    {% if parts %}
                     <div class="parts-list">
                         <h4>{{ _('parts') }}:</h4>
                         <ul>
-                            {% for part in order.selected_parts %}
+                            {% for part in parts %}
                                 {% if part is mapping %}
                                     {# Новый формат с количеством #}
                                     <li>
@@ -415,13 +416,18 @@
                         </ul>
                     </div>
                     <div class="add-part-box" style="margin-top:10px;">
-                        <button class="btn btn-secondary" onclick="toggleAddPart({{ order.id }}, '{{ order.category }}')">+ {{ _('add_part') }}</button>
+                        <button class="btn btn-secondary" type="button" data-order-id="{{ order.id }}" data-category="{{ order.category }}" onclick="toggleAddPartFromButton(this)">+ {{ _('add_part') }}</button>
+                        {% if order.status == 'новый' %}
+                        <form action="{{ url_for('mechanic_cancel_order', order_id=order.id) }}" method="POST" style="display:inline-block; margin-left: 10px;" data-confirm="{{ _('confirm_cancel_order') }}" onsubmit="return confirmFromForm(this);">
+                            <button type="submit" class="btn" style="background-color: #fee2e2; color: #991b1b; border: 1px solid #991b1b;">{{ _('cancel_order') }}</button>
+                        </form>
+                        {% endif %}
                         <div id="addPartForm-{{ order.id }}" style="display:none; margin-top:8px;">
                             <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                                 <select id="addPartCategory-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
                                 <select id="addPartSelect-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
                                 <input type="number" id="addPartQty-{{ order.id }}" min="1" value="1" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px; width:80px;">
-                                <button class="btn btn-primary" onclick="submitAddPart({{ order.id }})">Добавить</button>
+                                <button class="btn btn-primary" type="button" data-order-id="{{ order.id }}" onclick="submitAddPartFromButton(this)">Добавить</button>
                             </div>
                         </div>
                     </div>
@@ -445,10 +451,23 @@
             {% endif %}
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/language.js') }}"></script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
     <script>
         window.addPartCategoryCache = window.addPartCategoryCache || {};
+        function toggleAddPartFromButton(btn) {
+            const orderId = parseInt(btn.dataset.orderId);
+            const category = btn.dataset.category;
+            return toggleAddPart(orderId, category);
+        }
+        function submitAddPartFromButton(btn) {
+            const orderId = parseInt(btn.dataset.orderId);
+            return submitAddPart(orderId);
+        }
+        function confirmFromForm(form) {
+            return confirm(form.dataset.confirm || '');
+        }
         async function toggleAddPart(orderId, category) {
             const form = document.getElementById(`addPartForm-${orderId}`);
             const partSelect = document.getElementById(`addPartSelect-${orderId}`);
@@ -526,5 +545,6 @@
             }
         }
     </script>
+    <div style="text-align: center; padding: 18px 12px; color: #9ca3af; font-size: 12px;">Developed by Vorokhovskii Mikhail</div>
 </body>
 </html>

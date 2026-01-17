@@ -284,13 +284,32 @@ class Order(db.Model):
     def to_dict(self, include_mechanic=False, lang=None):
         """Преобразовать в словарь для API"""
         category_name = self.category
+        category_obj = Category.query.filter(
+            (Category.name == self.category) |
+            (Category.name_ru == self.category) |
+            (Category.name_en == self.category) |
+            (Category.name_he == self.category)
+        ).first()
+        category_raw = category_obj.name if category_obj else self.category
+
+        if lang and category_obj:
+            category_name = category_obj.get_name(lang)
         
-        # Если указан язык, пытаемся найти перевод категории
-        if lang:
-            category_obj = Category.query.filter_by(name=self.category).first()
-            if category_obj:
-                category_name = category_obj.get_name(lang)
-        
+        def translate_no_additives(target_lang):
+            if target_lang == 'he':
+                return 'ללא תוספים'
+            if target_lang == 'en':
+                return 'NO ADDITIVES'
+            return 'БЕЗ ПРИСАДОК'
+
+        no_additives_aliases_cf = {
+            'no_additives',
+            'без присадок',
+            'без добавок',
+            'no additives',
+            'ללא תוספים',
+        }
+
         # Обработка selected_parts с переводом
         selected_parts_translated = []
         for part in (self.selected_parts or []):
@@ -329,8 +348,12 @@ class Order(db.Model):
                 else:
                     # Старый формат без part_id
                     if isinstance(part, dict):
+                        raw_name = part.get('name', '')
+                        name = raw_name
+                        if isinstance(raw_name, str) and (raw_name.strip() == 'no_additives' or raw_name.strip().casefold() in no_additives_aliases_cf):
+                            name = translate_no_additives(lang)
                         item = {
-                            'name': part.get('name', ''),
+                            'name': name,
                             'quantity': quantity
                         }
                         if added_flag is not None:
@@ -342,11 +365,14 @@ class Order(db.Model):
                         selected_parts_translated.append(part)
             else:
                 # Совсем старый формат (просто строка)
-                selected_parts_translated.append(part)
+                if isinstance(part, str) and (part.strip() == 'no_additives' or part.strip().casefold() in no_additives_aliases_cf):
+                    selected_parts_translated.append(translate_no_additives(lang))
+                else:
+                    selected_parts_translated.append(part)
 
         # Сортировка по порядковому номеру из БД
         try:
-            parts_in_category = Part.query.filter_by(category=self.category).all()
+            parts_in_category = Part.query.filter_by(category=category_raw).all()
             id_to_order = {p.id: (p.sort_order if p.sort_order is not None else 0) for p in parts_in_category}
             name_to_order = {}
             for p in parts_in_category:
@@ -358,6 +384,8 @@ class Order(db.Model):
                 if isinstance(item, dict):
                     pid = item.get('part_id')
                     nm = item.get('name')
+                    if isinstance(pid, str) and pid.isdigit():
+                        pid = int(pid)
                     if pid in id_to_order:
                         return (id_to_order[pid], idx)
                     if nm in name_to_order:
@@ -376,6 +404,7 @@ class Order(db.Model):
             'mechanic_name': self.mechanic_name,
             'telegram_id': self.telegram_id,
             'category': category_name,
+            'category_raw': category_raw,
             'plate_number': self.plate_number,
             'selected_parts': selected_parts_translated,
             'is_original': self.is_original,

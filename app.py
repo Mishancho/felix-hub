@@ -1,6 +1,12 @@
 import os
 import re
-from datetime import datetime
+import shutil
+import socket
+import subprocess
+import textwrap
+from urllib.parse import urlencode
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, g
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import Babel, gettext, lazy_gettext as _l
@@ -8,6 +14,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 import requests
 from dotenv import load_dotenv
+from sqlalchemy.engine.url import make_url, URL
 from migrate_parts_translations import find_translation
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -36,16 +43,34 @@ app.config['LANGUAGES'] = {
     'he': 'עברית',
     'ru': 'Русский'
 }
+app.config['APP_TIMEZONE'] = os.getenv('APP_TIMEZONE', 'Asia/Jerusalem')
 
 # Создаем экземпляр Babel (инициализация позже)
 babel = Babel()
 
-# Исправление DATABASE_URL для PostgreSQL (Render использует postgres://, SQLAlchemy требует postgresql://)
 database_url = os.getenv('DATABASE_URL', 'sqlite:///instance/felix_hub.db')
+
+# Очистка и нормализация URL
+database_url = database_url.strip()
+if (database_url.startswith('"') and database_url.endswith('"')) or \
+   (database_url.startswith("'") and database_url.endswith("'")):
+    database_url = database_url[1:-1]
+
+# Исправление протокола для SQLAlchemy (postgres:// -> postgresql://)
+# Принудительно используем драйвер psycopg 3 (так как он в requirements.txt)
 if database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    database_url = database_url.replace('postgres://', 'postgresql+psycopg://', 1)
+elif database_url.startswith('postgresql://'):
+    database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+# Настройки SSL для PostgreSQL (Railway)
+if 'postgresql' in database_url:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "connect_args": {"sslmode": "require"}
+    }
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -108,6 +133,25 @@ def inject_category_translator():
     return dict(get_category_name=get_category_name)
 
 @app.context_processor
+def inject_status_translator():
+    """Добавляем функцию для перевода статусов заказов"""
+    def get_status_translation(status):
+        """Получить перевод статуса заказа"""
+        status_map = {
+            'новый': 'status_new',
+            'в работе': 'status_in_progress',
+            'готово': 'status_ready',
+            'выдано': 'status_delivered',
+            'отменено': 'status_cancelled'
+        }
+        key = status_map.get(status)
+        if key:
+            return gettext(key)
+        return status
+    
+    return dict(get_status_translation=get_status_translation)
+
+@app.context_processor
 def inject_cache_buster():
     """Добавляем версионирование для статических файлов (кэш-бастинг)"""
     import time
@@ -122,6 +166,18 @@ def inject_cache_buster():
         return url_for('static', filename=filename, v=app._static_version)
     
     return dict(static_url=static_url)
+
+def _format_dt(dt, fmt='%d.%m.%Y %H:%M', tz_name=None):
+    if not dt:
+        return ''
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    tz = ZoneInfo(tz_name or app.config.get('APP_TIMEZONE', 'Asia/Jerusalem'))
+    return dt.astimezone(tz).strftime(fmt)
+
+@app.context_processor
+def inject_datetime_formatter():
+    return dict(format_dt=_format_dt)
 
 @app.before_request
 def before_request():
@@ -274,7 +330,7 @@ def notify_admin_new_order(order):
     
     # Формируем список деталей с количеством на русском языке
     parts_list = []
-    for part in order.selected_parts:
+    for part in sort_selected_parts_by_sort_order(order.selected_parts or [], order.category):
         if isinstance(part, dict):
             # Новый формат с количеством и опционально part_id
             part_id = part.get('part_id')
@@ -286,6 +342,8 @@ def notify_admin_new_order(order):
                 name = part_obj.get_name('ru') if part_obj else part.get('name', '')
             else:
                 name = part.get('name', '')
+                if isinstance(name, str) and (name.strip() == 'no_additives' or name.strip().casefold() in {'без присадок', 'без добавок', 'no additives', 'ללא תוספים'}):
+                    name = 'БЕЗ ПРИСАДОК'
             
             if quantity > 1:
                 parts_list.append(f"• {name} <b>(x{quantity})</b>")
@@ -293,7 +351,10 @@ def notify_admin_new_order(order):
                 parts_list.append(f"• {name}")
         else:
             # Старый формат (просто строка)
-            parts_list.append(f"• {part}")
+            if isinstance(part, str) and (part.strip() == 'no_additives' or part.strip().casefold() in {'без присадок', 'без добавок', 'no additives', 'ללא תוספים'}):
+                parts_list.append("• БЕЗ ПРИСАДОК")
+            else:
+                parts_list.append(f"• {part}")
     
     parts_text = '\n'.join(parts_list)
     
@@ -313,7 +374,7 @@ def notify_admin_new_order(order):
 {parts_text}
 
 {'🔧 Оригинал' if order.is_original else '💰 Аналог'}
-⏰ {order.created_at.strftime('%d.%m.%Y %H:%M')}
+⏰ {_format_dt(order.created_at)}
 """
     
     if order.comment:
@@ -333,12 +394,20 @@ def notify_mechanic_order_ready(order):
     if not telegram_id:
         return
     
-    message = f"""✅ <b>Заказ №{order.id} готов!</b>
+    category_obj = Category.query.filter(
+        (Category.name == order.category) |
+        (Category.name_ru == order.category) |
+        (Category.name_en == order.category) |
+        (Category.name_he == order.category)
+    ).first()
+    category_name = category_obj.get_name('he') if category_obj else order.category
+    
+    message = f"""✅ <b>הזמנה מס׳ {order.id} מוכנה!</b>
 
-🚗 Авто: <b>{order.plate_number}</b>
-📦 Категория: {order.category}
+🚗 רכב: <code>{order.plate_number}</code>
+📦 קטגוריה: {category_name}
 
-Забери детали у кладовщика 📦"""
+אפשר לאסוף את החלקים אצל המחסנאי 📦"""
     
     send_telegram_message(telegram_id, message)
 
@@ -361,6 +430,24 @@ def notify_admin_part_added(order, part_entry):
 👨‍🔧 Механик: {order.mechanic_name}"""
     send_telegram_message(TELEGRAM_ADMIN_CHAT_ID, message)
 
+def notify_admin_order_cancelled(order):
+    """Уведомление администратору об отмене заказа"""
+    if not TELEGRAM_ADMIN_CHAT_ID:
+        return
+    
+    category_obj = Category.query.filter_by(name=order.category).first()
+    category_name = category_obj.get_name('ru') if category_obj else order.category
+    
+    message = f"""❌ <b>Заказ №{order.id} ОТМЕНЕН</b>
+
+🚗 Гос номер: <b>{order.plate_number}</b>
+📦 Категория: {category_name}
+👨‍🔧 Механик: {order.mechanic_name}
+
+⚠️ Заказ был отменен механиком."""
+    
+    send_telegram_message(TELEGRAM_ADMIN_CHAT_ID, message)
+
 def validate_plate_number(plate_number):
     """Валидация формата гос номера"""
     # Примеры допустимых форматов: 123-45-678, A123BC77, В456СТ199
@@ -376,54 +463,159 @@ def validate_plate_number(plate_number):
     
     return True
 
+def sort_selected_parts_by_sort_order(parts, category, cache=None):
+    if not parts:
+        return []
+
+    cache = cache if cache is not None else {}
+    category_obj = Category.query.filter(
+        (Category.name == category) |
+        (Category.name_ru == category) |
+        (Category.name_en == category) |
+        (Category.name_he == category)
+    ).first()
+    raw_category = category_obj.name if category_obj else category
+    mapping = cache.get(raw_category)
+
+    if mapping is None:
+        parts_in_category = Part.query.filter_by(category=raw_category).all()
+        id_to_order = {p.id: (p.sort_order if p.sort_order is not None else 0) for p in parts_in_category}
+        name_to_order = {}
+        for p in parts_in_category:
+            order_val = p.sort_order if p.sort_order is not None else 0
+            for nm in (p.name_ru, p.name_en, p.name_he, p.name):
+                if nm:
+                    name_to_order[nm] = order_val
+        max_order = max([o for o in id_to_order.values()] + [0])
+        mapping = (id_to_order, name_to_order, max_order)
+        cache[raw_category] = mapping
+
+    id_to_order, name_to_order, max_order = mapping
+
+    def sort_key(item, idx):
+        if isinstance(item, dict):
+            pid = item.get('part_id')
+            if isinstance(pid, str) and pid.isdigit():
+                pid = int(pid)
+            nm = item.get('name')
+            if pid in id_to_order:
+                return (id_to_order[pid], idx)
+            if nm in name_to_order:
+                return (name_to_order[nm], idx)
+            return (max_order + 1, idx)
+        if item in name_to_order:
+            return (name_to_order[item], idx)
+        return (max_order + 1, idx)
+
+    return [x for _, x in sorted([(sort_key(it, i), it) for i, it in enumerate(parts)], key=lambda t: t[0])]
+
+def _send_to_thermal_printer(text):
+    backend = (os.getenv('THERMAL_PRINT_BACKEND', 'stdout') or 'stdout').strip().lower()
+    encoding = (os.getenv('THERMAL_PRINTER_ENCODING', 'utf-8') or 'utf-8').strip()
+    payload = (text or '').encode(encoding, errors='replace')
+
+    if backend in {'stdout', 'console'}:
+        print(text)
+        return
+
+    if backend == 'cups':
+        lp_path = shutil.which('lp')
+        if not lp_path:
+            raise RuntimeError('THERMAL_PRINT_BACKEND=cups, но lp не найден')
+
+        printer_name = (os.getenv('THERMAL_PRINTER_NAME') or '').strip()
+        cmd = [lp_path]
+        if printer_name:
+            cmd += ['-d', printer_name]
+        cmd += ['-o', 'raw']
+
+        proc = subprocess.run(cmd, input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if proc.returncode != 0:
+            err = proc.stderr.decode('utf-8', errors='replace').strip() or 'unknown error'
+            raise RuntimeError(f'Ошибка печати (cups): {err}')
+        return
+
+    if backend == 'tcp':
+        host = (os.getenv('THERMAL_PRINTER_HOST') or '').strip()
+        port_raw = (os.getenv('THERMAL_PRINTER_PORT') or '9100').strip()
+        port = int(port_raw) if port_raw.isdigit() else 9100
+        if not host:
+            raise RuntimeError('THERMAL_PRINT_BACKEND=tcp, но THERMAL_PRINTER_HOST не задан')
+
+        with socket.create_connection((host, port), timeout=10) as sock:
+            sock.sendall(payload)
+        return
+
+    raise RuntimeError(f'Неизвестный THERMAL_PRINT_BACKEND={backend}')
+
 def print_receipt(order):
     """Печать чека (симуляция - можно заменить на реальную печать)"""
-    # Получаем переведенное название категории на русском
     category_name = order.category
     category_obj = Category.query.filter_by(name=order.category).first()
     if category_obj:
         category_name = category_obj.get_name('ru')
-    
-    receipt = f"""
-{'='*40}
-СТО Felix
-{'='*40}
-Заказ №{order.id}
-Механик: {order.mechanic_name}
-Гос номер: {order.plate_number}
-Категория: {category_name}
-{'='*40}
-Детали:
-"""
-    # Выводим детали на русском языке
-    for part in order.selected_parts:
+
+    width_raw = os.getenv('THERMAL_PRINTER_LINE_WIDTH', '').strip()
+    width = int(width_raw) if width_raw.isdigit() and int(width_raw) > 0 else 40
+    sep = '=' * width
+
+    lines = [
+        sep,
+        'СТО Felix',
+        sep,
+        f'Заказ №{order.id}',
+        f'Механик: {order.mechanic_name}',
+        f'Гос номер: {order.plate_number}',
+        f'Категория: {category_name}',
+        f"Тип: {'Оригинал' if order.is_original else 'Аналог'}",
+        f'Создан: {_format_dt(order.created_at)}',
+        sep,
+        'Состав заказа:',
+    ]
+
+    no_additives_aliases_cf = {
+        'no_additives',
+        'без присадок',
+        'без добавок',
+        'no additives',
+        'ללא תוספים',
+    }
+
+    for part in sort_selected_parts_by_sort_order(order.selected_parts or [], order.category):
         if isinstance(part, dict):
-            # Новый формат с количеством и опционально part_id
             part_id = part.get('part_id')
             quantity = part.get('quantity', 1)
-            
-            # Если есть part_id, получаем название на русском
+
             if part_id:
                 part_obj = Part.query.get(part_id)
-                name = part_obj.get_name('ru') if part_obj else part.get('name', '')
+                name = part_obj.get_name('ru') if part_obj else (part.get('name', '') or '')
             else:
-                name = part.get('name', '')
-            
-            if quantity > 1:
-                receipt += f"- {name} (x{quantity})\n"
-            else:
-                receipt += f"- {name}\n"
+                name = (part.get('name', '') or '')
+                if isinstance(name, str) and (name.strip() == 'no_additives' or name.strip().casefold() in no_additives_aliases_cf):
+                    name = 'БЕЗ ПРИСАДОК'
+
+            qty_suffix = f' (x{quantity})' if isinstance(quantity, int) and quantity > 1 else ''
+            lines.append(f'- {name}{qty_suffix}'.strip())
         else:
-            # Старый формат (просто строка)
-            receipt += f"- {part}\n"
-    
-    receipt += f"""{'='*40}
-Статус: {order.status}
-Дата: {order.created_at.strftime('%d.%m.%Y %H:%M')}
-{'='*40}
-"""
-    
-    print(receipt)  # В продакшене здесь будет вызов принтера
+            part_text = part
+            if isinstance(part_text, str) and (part_text.strip() == 'no_additives' or part_text.strip().casefold() in no_additives_aliases_cf):
+                part_text = 'БЕЗ ПРИСАДОК'
+            lines.append(f'- {part_text}')
+
+    if order.comment:
+        lines.append(sep)
+        lines.append('Комментарий:')
+        for chunk in textwrap.wrap(str(order.comment), width=width):
+            lines.append(chunk)
+
+    lines += [
+        sep,
+        f'Статус: {order.status}',
+        sep,
+    ]
+
+    receipt = '\n'.join(lines) + '\n'
+    _send_to_thermal_printer(receipt)
     return receipt
 
 # Маршруты приложения
@@ -558,8 +750,102 @@ def mechanic_orders():
         query = query.filter(Order.plate_number.ilike(f'%{plate_number}%'))
     
     orders = query.order_by(Order.created_at.desc()).all()
-    
+    lang = g.locale if hasattr(g, 'locale') and g.locale else 'ru'
+    sort_cache = {}
+    no_additives_aliases_cf = {
+        'no_additives',
+        'без присадок',
+        'без добавок',
+        'no additives',
+        'ללא תוספים',
+    }
+
+    part_ids = set()
+    for order in orders:
+        for part in (order.selected_parts or []):
+            if isinstance(part, dict):
+                part_id = part.get('part_id')
+                if isinstance(part_id, int):
+                    part_ids.add(part_id)
+                elif isinstance(part_id, str) and part_id.isdigit():
+                    part_ids.add(int(part_id))
+
+    parts_by_id = {}
+    if part_ids:
+        for part in Part.query.filter(Part.id.in_(part_ids)).all():
+            parts_by_id[part.id] = part.get_name(lang)
+
+    for order in orders:
+        setattr(order, 'selected_parts_sorted', sort_selected_parts_by_sort_order(order.selected_parts or [], order.category, cache=sort_cache))
+
+        localized_parts = []
+        for part in (order.selected_parts or []):
+            if isinstance(part, dict):
+                part_name = (part.get('name') or '').strip()
+                is_no_additives_label = (
+                    bool(part.get('is_label')) and not part.get('part_id')
+                ) or (part_name == 'no_additives') or (part_name.casefold() in no_additives_aliases_cf)
+
+                if is_no_additives_label:
+                    localized_part = dict(part)
+                    localized_part['name'] = gettext('no_additives')
+                    localized_parts.append(localized_part)
+                    continue
+
+                part_id = part.get('part_id')
+                part_id_int = None
+                if isinstance(part_id, int):
+                    part_id_int = part_id
+                elif isinstance(part_id, str) and part_id.isdigit():
+                    part_id_int = int(part_id)
+
+                localized_part = dict(part)
+                translated_name = parts_by_id.get(part_id_int) if part_id_int else None
+                if translated_name:
+                    localized_part['name'] = translated_name
+                localized_parts.append(localized_part)
+            else:
+                part_text = (part or '').strip() if isinstance(part, str) else part
+                if isinstance(part_text, str) and (part_text == 'no_additives' or part_text.casefold() in no_additives_aliases_cf):
+                    localized_parts.append(gettext('no_additives'))
+                else:
+                    localized_parts.append(part)
+
+        setattr(order, 'selected_parts_localized', sort_selected_parts_by_sort_order(localized_parts, order.category, cache=sort_cache))
+
     return render_template('mechanic/orders.html', orders=orders)
+
+
+@app.route('/mechanic/orders/<int:order_id>/cancel', methods=['POST'])
+@mechanic_required
+def mechanic_cancel_order(order_id):
+    """Отмена заказа механиком"""
+    order = Order.query.get_or_404(order_id)
+    
+    # Проверка прав: заказ должен принадлежать текущему механику
+    if order.mechanic_id != current_user.id:
+        flash(_l('У вас нет прав на отмену этого заказа'), 'error')
+        return redirect(url_for('mechanic_orders'))
+    
+    # Проверка статуса: отменять можно только новые заказы
+    if order.status != 'новый':
+        flash(_l('Нельзя отменить заказ, который уже в работе или выполнен'), 'error')
+        return redirect(url_for('mechanic_orders'))
+    
+    try:
+        order.status = 'отменено'
+        db.session.commit()
+        
+        # Уведомление администратору
+        notify_admin_order_cancelled(order)
+        
+        flash(_l('Заказ #%(id)s успешно отменен', id=order.id), 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Ошибка отмены заказа: {e}")
+        flash(_l('Ошибка при отмене заказа'), 'error')
+        
+    return redirect(url_for('mechanic_orders'))
 
 
 @app.route('/mechanic/orders/new')
@@ -582,20 +868,164 @@ def mechanic_settings():
     """Настройки механика"""
     return render_template('mechanic/settings.html')
 
+
+@app.route('/order/create')
+def public_create_order():
+    """Публичная страница создания заказа с выбором механика"""
+    mechanics = Mechanic.query.filter_by(is_active=True).order_by(Mechanic.full_name).all()
+    return render_template('create_order.html', mechanics=mechanics)
+
+
+@app.route('/orders')
+def public_orders():
+    status = request.args.get('status', 'все')
+    plate_number = request.args.get('plate_number', '').strip()
+    mechanic = request.args.get('mechanic', '').strip()
+    order_id = request.args.get('order_id', '').strip()
+    page_raw = request.args.get('page', '1')
+    page_size_raw = request.args.get('page_size', '25')
+
+    try:
+        page = int(page_raw)
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        page_size = int(page_size_raw)
+    except (TypeError, ValueError):
+        page_size = 25
+
+    if page < 1:
+        page = 1
+
+    allowed_page_sizes = {15, 25, 50, 100}
+    if page_size not in allowed_page_sizes:
+        page_size = 25
+
+    base_args = request.args.to_dict(flat=True)
+    base_args.pop('page', None)
+    base_args['page_size'] = str(page_size)
+    base_query = urlencode(base_args)
+
+    query = Order.query
+
+    if order_id.isdigit():
+        query = query.filter(Order.id == int(order_id))
+
+    if status and status != 'все':
+        query = query.filter_by(status=status)
+
+    if plate_number:
+        query = query.filter(Order.plate_number.ilike(f'%{plate_number}%'))
+
+    if mechanic:
+        query = query.filter(Order.mechanic_name.ilike(f'%{mechanic}%'))
+
+    total_orders = query.count()
+    total_pages = max(1, (total_orders + page_size - 1) // page_size) if page_size > 0 else 1
+    if page > total_pages:
+        page = total_pages
+
+    orders = (
+        query.order_by(Order.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    lang = g.locale if hasattr(g, 'locale') and g.locale else 'ru'
+    sort_cache = {}
+    no_additives_aliases_cf = {
+        'no_additives',
+        'без присадок',
+        'без добавок',
+        'no additives',
+        'ללא תוספים',
+    }
+
+    part_ids = set()
+    for order in orders:
+        for part in (order.selected_parts or []):
+            if isinstance(part, dict):
+                part_id = part.get('part_id')
+                if isinstance(part_id, int):
+                    part_ids.add(part_id)
+                elif isinstance(part_id, str) and part_id.isdigit():
+                    part_ids.add(int(part_id))
+
+    parts_by_id = {}
+    if part_ids:
+        for part in Part.query.filter(Part.id.in_(part_ids)).all():
+            parts_by_id[part.id] = part.get_name(lang)
+
+    for order in orders:
+        localized_parts = []
+        for part in (order.selected_parts or []):
+            if isinstance(part, dict):
+                part_name = (part.get('name') or '').strip()
+                is_no_additives_label = (
+                    bool(part.get('is_label')) and not part.get('part_id')
+                ) or (part_name.casefold() in no_additives_aliases_cf)
+
+                if is_no_additives_label or part_name == 'no_additives':
+                    localized_part = dict(part)
+                    localized_part['name'] = gettext('no_additives')
+                    localized_parts.append(localized_part)
+                    continue
+
+                part_id = part.get('part_id')
+                part_id_int = None
+                if isinstance(part_id, int):
+                    part_id_int = part_id
+                elif isinstance(part_id, str) and part_id.isdigit():
+                    part_id_int = int(part_id)
+
+                localized_part = dict(part)
+                translated_name = parts_by_id.get(part_id_int) if part_id_int else None
+                if translated_name:
+                    localized_part['name'] = translated_name
+                localized_parts.append(localized_part)
+            else:
+                part_text = (part or '').strip() if isinstance(part, str) else part
+                if isinstance(part_text, str) and (part_text == 'no_additives' or part_text.casefold() in no_additives_aliases_cf):
+                    localized_parts.append(gettext('no_additives'))
+                else:
+                    localized_parts.append(part)
+        setattr(order, 'selected_parts_localized', sort_selected_parts_by_sort_order(localized_parts, order.category, cache=sort_cache))
+
+    return render_template(
+        'orders_public.html',
+        orders=orders,
+        total_orders=total_orders,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        base_query=base_query
+    )
+
+
 @app.route('/api/submit_order', methods=['POST'])
 def submit_order():
     """API для создания нового заказа"""
     try:
         data = request.get_json()
         
-        # Определяем, создается ли заказ авторизованным механиком
-        if current_user.is_authenticated:
-            # Заказ от авторизованного механика
+        # Приоритет 1: Явно переданный ID механика (для публичной страницы выбора)
+        mechanic_id_param = data.get('mechanic_id')
+        if mechanic_id_param:
+            mechanic = Mechanic.query.get(mechanic_id_param)
+            if not mechanic:
+                return jsonify({'error': 'Механик не найден'}), 400
+            
+            mechanic_id = mechanic.id
+            mechanic_name = mechanic.full_name
+            telegram_id = mechanic.telegram_id
+        # Приоритет 2: Авторизованный пользователь (если ID не передан явно)
+        elif current_user.is_authenticated:
             mechanic_id = current_user.id
             mechanic_name = current_user.full_name
             telegram_id = current_user.telegram_id
+        # Приоритет 3: Анонимный заказ / обратная совместимость
         else:
-            # Анонимный заказ (обратная совместимость)
             if not app.config['ALLOW_ANONYMOUS_ORDERS']:
                 return jsonify({'error': 'Требуется авторизация'}), 401
             
@@ -623,16 +1053,42 @@ def submit_order():
         # Поддерживаем как старый формат (массив строк), так и новый (массив объектов с количеством и part_id)
         selected_parts = data['selected_parts']
         normalized_parts = []
+        no_additives_aliases_cf = {
+            'no_additives',
+            'без присадок',
+            'без добавок',
+            'no additives',
+            'ללא תוספים',
+        }
         
         for part in selected_parts:
             if isinstance(part, str):
                 # Старый формат: просто строка (для обратной совместимости)
-                normalized_parts.append({
-                    'name': part,
-                    'quantity': 1
-                })
+                part_name = part.strip()
+                if part_name == 'no_additives' or part_name.casefold() in no_additives_aliases_cf:
+                    normalized_parts.append({
+                        'name': 'no_additives',
+                        'quantity': 1,
+                        'is_label': True
+                    })
+                else:
+                    normalized_parts.append({
+                        'name': part,
+                        'quantity': 1
+                    })
             elif isinstance(part, dict):
                 # Новый формат: объект с name, quantity и опционально part_id
+                part_name = (part.get('name', '') or '').strip()
+                part_id = part.get('part_id')
+                is_label = bool(part.get('is_label')) or (not part_id and (part_name == 'no_additives' or part_name.casefold() in no_additives_aliases_cf))
+                if is_label:
+                    normalized_parts.append({
+                        'name': 'no_additives',
+                        'quantity': int(part.get('quantity', 1)),
+                        'is_label': True
+                    })
+                    continue
+
                 part_entry = {
                     'name': part.get('name', ''),
                     'quantity': int(part.get('quantity', 1))
@@ -643,6 +1099,42 @@ def submit_order():
                     part_entry['part_id'] = part['part_id']
                 
                 normalized_parts.append(part_entry)
+        normalized_parts = sort_selected_parts_by_sort_order(normalized_parts, data['category'])
+
+        plate_number_normalized = data['plate_number'].strip().upper()
+        comment_normalized = (data.get('comment') or '').strip()
+        if not comment_normalized:
+            comment_normalized = None
+        is_original_normalized = bool(data.get('is_original', False))
+
+        recent_window_start = datetime.utcnow() - timedelta(seconds=15)
+        recent_query = Order.query.filter(Order.created_at >= recent_window_start)
+        if mechanic_id is not None:
+            recent_query = recent_query.filter(Order.mechanic_id == mechanic_id)
+        else:
+            recent_query = recent_query.filter(Order.mechanic_name == mechanic_name)
+            if telegram_id:
+                recent_query = recent_query.filter(Order.telegram_id == telegram_id)
+
+        recent_orders = recent_query.order_by(Order.created_at.desc()).limit(5).all()
+        for recent in recent_orders:
+            recent_comment = (recent.comment or '').strip()
+            if not recent_comment:
+                recent_comment = None
+
+            if (
+                recent.plate_number == plate_number_normalized
+                and recent.category == data['category']
+                and bool(recent.is_original) == is_original_normalized
+                and recent_comment == comment_normalized
+                and (recent.selected_parts or []) == normalized_parts
+            ):
+                return jsonify({
+                    'success': True,
+                    'order_id': recent.id,
+                    'message': 'Заказ уже был создан',
+                    'deduplicated': True
+                }), 200
         
         # Создание нового заказа
         order = Order(
@@ -650,11 +1142,11 @@ def submit_order():
             mechanic_name=mechanic_name,
             telegram_id=telegram_id,
             category=data['category'],
-            plate_number=data['plate_number'].strip().upper(),
+            plate_number=plate_number_normalized,
             selected_parts=normalized_parts,  # Сохраняем в новом формате
-            is_original=data.get('is_original', False),
+            is_original=is_original_normalized,
             photo_url=data.get('photo_url'),
-            comment=data.get('comment'),
+            comment=comment_normalized,
             status='новый'
         )
         
@@ -720,6 +1212,9 @@ def get_orders():
         status = request.args.get('status')
         plate_number = request.args.get('plate_number')
         mechanic = request.args.get('mechanic')
+        created_from_raw = request.args.get('created_from')
+        created_to_raw = request.args.get('created_to')
+        lang = request.args.get('lang')
         
         query = Order.query
         
@@ -731,11 +1226,44 @@ def get_orders():
         
         if mechanic:
             query = query.filter(Order.mechanic_name.ilike(f'%{mechanic}%'))
+
+        created_from = None
+        created_to = None
+        if created_from_raw:
+            created_from_raw = created_from_raw.strip()
+            try:
+                created_from = datetime.strptime(created_from_raw, '%Y-%m-%d') if len(created_from_raw) == 10 else datetime.fromisoformat(created_from_raw)
+            except (TypeError, ValueError):
+                created_from = None
+        if created_to_raw:
+            created_to_raw = created_to_raw.strip()
+            try:
+                created_to = datetime.strptime(created_to_raw, '%Y-%m-%d') if len(created_to_raw) == 10 else datetime.fromisoformat(created_to_raw)
+            except (TypeError, ValueError):
+                created_to = None
+
+        if created_from and created_to and created_from > created_to:
+            created_from, created_to = created_to, created_from
+
+        if created_from:
+            query = query.filter(Order.created_at >= created_from)
+
+        if created_to:
+            query = query.filter(Order.created_at < (created_to + timedelta(days=1)))
         
         orders = query.order_by(Order.created_at.desc()).all()
         
-        # Админ всегда получает данные на русском языке
-        return jsonify([order.to_dict(lang='ru') for order in orders])
+        if not lang:
+            lang = g.locale if hasattr(g, 'locale') else 'ru'
+        allowed_langs = app.config.get('LANGUAGES') or ['ru', 'en', 'he']
+        if lang not in allowed_langs:
+            lang = 'ru'
+
+        resp = jsonify([order.to_dict(lang=lang) for order in orders])
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
     except Exception as e:
         error_msg = str(e)
         
@@ -818,6 +1346,7 @@ def add_part_to_order(order_id):
         if not isinstance(order.selected_parts, list):
             order.selected_parts = []
         order.selected_parts.append(entry)
+        order.selected_parts = sort_selected_parts_by_sort_order(order.selected_parts, order.category)
         flag_modified(order, 'selected_parts')
         order.updated_at = datetime.utcnow()
         db.session.commit()
@@ -828,6 +1357,7 @@ def add_part_to_order(order_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/orders/<int:order_id>/print', methods=['POST'])
+@admin_required
 def print_order(order_id):
     """API для печати чека"""
     try:
@@ -1243,7 +1773,7 @@ def get_parts():
 def get_parts_categories():
     """Получить список всех категорий с переводами"""
     try:
-        lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
+        lang = request.args.get('lang') or 'ru'
         
         # Получаем категории из таблицы Category
         categories = Category.query.filter_by(is_active=True).order_by(Category.sort_order, Category.name).all()
@@ -1268,7 +1798,8 @@ def get_parts_catalog():
     """Получить весь каталог в формате {категория: [запчасти с ID]}"""
     try:
         active_only = request.args.get('active_only', 'true').lower() == 'true'
-        lang = request.args.get('lang', g.locale if hasattr(g, 'locale') else 'ru')
+        lang_param = request.args.get('lang')
+        lang = lang_param or 'ru'
         
         query = Part.query
         if active_only:
@@ -1284,10 +1815,10 @@ def get_parts_catalog():
         for part in parts:
             # Получаем переведённое название категории
             category_obj = categories.get(part.category)
-            if category_obj:
+            if category_obj and lang_param:
                 category_name = category_obj.get_name(lang)
             else:
-                category_name = part.category  # Fallback на оригинальное название
+                category_name = part.category
             
             if category_name not in catalog:
                 catalog[category_name] = []
@@ -1295,7 +1826,8 @@ def get_parts_catalog():
             # Добавляем запчасть с ID и переведённым названием
             catalog[category_name].append({
                 'id': part.id,
-                'name': part.get_name(lang)
+                'name': part.get_name(lang),
+                'name_ru': part.name_ru or part.name
             })
         
         return jsonify(catalog)
@@ -1762,11 +2294,13 @@ def init_db():
 # Миграции выполняются через run_migrations.py после деплоя
 
 # Автоматические миграции при старте (для Render)
-try:
-    from migrations_auto import run_auto_migrations
-    run_auto_migrations(app)
-except Exception as e:
-    print(f"⚠️  Автоматические миграции пропущены: {e}")
+import sys as _sys
+if 'unittest' not in _sys.modules and not os.environ.get('PYTEST_CURRENT_TEST'):
+    try:
+        from migrations_auto import run_auto_migrations
+        run_auto_migrations(app)
+    except Exception as e:
+        print(f"⚠️  Автоматические миграции пропущены: {e}")
 
 print("="*60)
 print("🚀 Felix Hub готов к запуску")
@@ -1777,4 +2311,3 @@ print("="*60)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
-
