@@ -1098,6 +1098,10 @@ def submit_order():
                 if 'part_id' in part:
                     part_entry['part_id'] = part['part_id']
                 
+                # Сохраняем is_original для каждой детали, если передано
+                if 'is_original' in part:
+                    part_entry['is_original'] = bool(part['is_original'])
+                
                 normalized_parts.append(part_entry)
         normalized_parts = sort_selected_parts_by_sort_order(normalized_parts, data['category'])
 
