@@ -281,6 +281,9 @@ msgstr "פעיל"
 msgid "cancel"
 msgstr "ביטול"
 
+msgid "add"
+msgstr "הוסף"
+
 msgid "save"
 msgstr "שמור"
 

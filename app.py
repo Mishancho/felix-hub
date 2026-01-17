@@ -1332,11 +1332,13 @@ def add_part_to_order(order_id):
         part_id = data.get('part_id')
         name = data.get('name')
         quantity = int(data.get('quantity', 1))
+        is_original = data.get('is_original', True)  # По умолчанию оригинал
         if not name and not part_id:
             return jsonify({'error': 'Укажите part_id или name'}), 400
         entry = {
             'name': name or '',
             'quantity': quantity if quantity > 0 else 1,
+            'is_original': bool(is_original),
             'added_by_mechanic': True,
             'added_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         }
