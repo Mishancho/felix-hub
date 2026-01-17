@@ -423,12 +423,15 @@
                         </ul>
                     </div>
                     <div class="add-part-box" style="margin-top:10px;">
+                        {% if order.status not in ['готово', 'выдано'] %}
                         <button class="btn btn-secondary" type="button" data-order-id="{{ order.id }}" data-category="{{ order.category }}" onclick="toggleAddPartFromButton(this)">+ {{ _('add_part') }}</button>
+                        {% endif %}
                         {% if order.status == 'новый' %}
                         <form action="{{ url_for('mechanic_cancel_order', order_id=order.id) }}" method="POST" style="display:inline-block; margin-left: 10px;" data-confirm="{{ _('confirm_cancel_order') }}" onsubmit="return confirmFromForm(this);">
                             <button type="submit" class="btn" style="background-color: #fee2e2; color: #991b1b; border: 1px solid #991b1b;">{{ _('cancel_order') }}</button>
                         </form>
                         {% endif %}
+                        {% if order.status not in ['готово', 'выдано'] %}
                         <div id="addPartForm-{{ order.id }}" style="display:none; margin-top:8px;">
                             <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                                 <select id="addPartCategory-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
@@ -441,6 +444,7 @@
                                 <button class="btn btn-primary" type="button" data-order-id="{{ order.id }}" onclick="submitAddPartFromButton(this)">{{ _('add') if _('add') != 'add' else 'Добавить' }}</button>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     {% endif %}
 

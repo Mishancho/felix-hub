@@ -1328,6 +1328,9 @@ def add_part_to_order(order_id):
         order = Order.query.get_or_404(order_id)
         if order.mechanic_id and order.mechanic_id != current_user.id:
             return jsonify({'error': 'Forbidden'}), 403
+        # Запрет добавления запчастей к готовым/выданным заказам
+        if order.status in ['готово', 'выдано']:
+            return jsonify({'error': 'Нельзя добавлять запчасти к завершённому заказу'}), 403
         data = request.get_json() or {}
         part_id = data.get('part_id')
         name = data.get('name')
