@@ -281,6 +281,9 @@ msgstr "Active"
 msgid "cancel"
 msgstr "Cancel"
 
+msgid "add"
+msgstr "Add"
+
 msgid "save"
 msgstr "Save"
 
@@ -422,6 +425,12 @@ msgstr "Original"
 
 msgid "analog"
 msgstr "Analog"
+
+msgid "part_orig"
+msgstr "orig"
+
+msgid "part_analog"
+msgstr "analog"
 
 msgid "print"
 msgstr "Print"

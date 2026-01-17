@@ -409,9 +409,9 @@
                                         {% endif %}
                                         {% if part.is_original is defined %}
                                             {% if part.is_original %}
-                                                <span style="background: #d1e7dd; color: #0f5132; padding: 2px 6px; border-radius: 8px; font-size: 0.75em; font-weight: 700;">💎</span>
+                                                <span style="background: #d1e7dd; color: #0f5132; padding: 2px 6px; border-radius: 8px; font-size: 0.7em; font-weight: 700; margin-left: 4px;">{{ _('part_orig') }}</span>
                                             {% else %}
-                                                <span style="background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 8px; font-size: 0.75em; font-weight: 700;">🔄</span>
+                                                <span style="background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 8px; font-size: 0.7em; font-weight: 700; margin-left: 4px;">{{ _('part_analog') }}</span>
                                             {% endif %}
                                         {% endif %}
                                     </li>
@@ -423,20 +423,28 @@
                         </ul>
                     </div>
                     <div class="add-part-box" style="margin-top:10px;">
+                        {% if order.status not in ['готово', 'выдано'] %}
                         <button class="btn btn-secondary" type="button" data-order-id="{{ order.id }}" data-category="{{ order.category }}" onclick="toggleAddPartFromButton(this)">+ {{ _('add_part') }}</button>
+                        {% endif %}
                         {% if order.status == 'новый' %}
                         <form action="{{ url_for('mechanic_cancel_order', order_id=order.id) }}" method="POST" style="display:inline-block; margin-left: 10px;" data-confirm="{{ _('confirm_cancel_order') }}" onsubmit="return confirmFromForm(this);">
                             <button type="submit" class="btn" style="background-color: #fee2e2; color: #991b1b; border: 1px solid #991b1b;">{{ _('cancel_order') }}</button>
                         </form>
                         {% endif %}
+                        {% if order.status not in ['готово', 'выдано'] %}
                         <div id="addPartForm-{{ order.id }}" style="display:none; margin-top:8px;">
                             <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                                 <select id="addPartCategory-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
                                 <select id="addPartSelect-{{ order.id }}" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px;"></select>
                                 <input type="number" id="addPartQty-{{ order.id }}" min="1" value="1" style="padding:8px; border:2px solid #e0e0e0; border-radius:8px; width:80px;">
-                                <button class="btn btn-primary" type="button" data-order-id="{{ order.id }}" onclick="submitAddPartFromButton(this)">Добавить</button>
+                                <div class="part-type-toggle" id="addPartType-{{ order.id }}" style="display:flex; gap:4px;">
+                                    <span class="type-btn original active" onclick="setAddPartType({{ order.id }}, true)" style="padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; background:#d1e7dd; color:#0f5132; border:2px solid #10b981;">{{ _('part_orig') }}</span>
+                                    <span class="type-btn analog" onclick="setAddPartType({{ order.id }}, false)" style="padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; background:#f3f4f6; color:#6b7280; border:2px solid #e5e7eb;">{{ _('part_analog') }}</span>
+                                </div>
+                                <button class="btn btn-primary" type="button" data-order-id="{{ order.id }}" onclick="submitAddPartFromButton(this)">{{ _('add') if _('add') != 'add' else 'Добавить' }}</button>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     {% endif %}
 
@@ -463,6 +471,35 @@
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
     <script>
         window.addPartCategoryCache = window.addPartCategoryCache || {};
+        window.addPartIsOriginal = window.addPartIsOriginal || {};
+        
+        function setAddPartType(orderId, isOriginal) {
+            window.addPartIsOriginal[orderId] = isOriginal;
+            const toggle = document.getElementById(`addPartType-${orderId}`);
+            if (!toggle) return;
+            const origBtn = toggle.querySelector('.type-btn.original');
+            const analogBtn = toggle.querySelector('.type-btn.analog');
+            if (isOriginal) {
+                origBtn.classList.add('active');
+                origBtn.style.background = '#d1e7dd';
+                origBtn.style.color = '#0f5132';
+                origBtn.style.borderColor = '#10b981';
+                analogBtn.classList.remove('active');
+                analogBtn.style.background = '#f3f4f6';
+                analogBtn.style.color = '#6b7280';
+                analogBtn.style.borderColor = '#e5e7eb';
+            } else {
+                analogBtn.classList.add('active');
+                analogBtn.style.background = '#f8d7da';
+                analogBtn.style.color = '#721c24';
+                analogBtn.style.borderColor = '#f59e0b';
+                origBtn.classList.remove('active');
+                origBtn.style.background = '#f3f4f6';
+                origBtn.style.color = '#6b7280';
+                origBtn.style.borderColor = '#e5e7eb';
+            }
+        }
+        
         function toggleAddPartFromButton(btn) {
             const orderId = parseInt(btn.dataset.orderId);
             const category = btn.dataset.category;
@@ -480,6 +517,8 @@
             const partSelect = document.getElementById(`addPartSelect-${orderId}`);
             const catSelect = document.getElementById(`addPartCategory-${orderId}`);
             if (form.style.display === 'none') {
+                // Инициализируем is_original в true при открытии формы
+                window.addPartIsOriginal[orderId] = true;
                 try {
                     const lang = '{{ g.locale }}';
                     // Получаем список категорий: локализованный и сырой
@@ -534,11 +573,12 @@
             const select = document.getElementById(`addPartSelect-${orderId}`);
             const qty = parseInt(document.getElementById(`addPartQty-${orderId}`).value) || 1;
             const partId = parseInt(select.value);
+            const isOriginal = window.addPartIsOriginal[orderId] !== undefined ? window.addPartIsOriginal[orderId] : true;
             try {
                 const response = await fetch(`/api/orders/${orderId}/add-part`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ part_id: partId, quantity: qty })
+                    body: JSON.stringify({ part_id: partId, quantity: qty, is_original: isOriginal })
                 });
                 const data = await response.json();
                 if (!response.ok) {

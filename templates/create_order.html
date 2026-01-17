@@ -744,9 +744,9 @@
                     <span class="part-name">${partName}</span>
                     <div class="part-type-toggle">
                         <span class="type-btn original ${partIsOriginal ? 'active' : ''}" 
-                              onclick="event.stopPropagation(); event.preventDefault(); setPartType(this, true)">💎 {{ _('original') if _('original') != 'original' else 'Ориг' }}</span>
+                              onclick="event.stopPropagation(); event.preventDefault(); setPartType(this, true)">{{ _('part_orig') if _('part_orig') != 'part_orig' else 'ориг' }}</span>
                         <span class="type-btn analog ${!partIsOriginal ? 'active' : ''}" 
-                              onclick="event.stopPropagation(); event.preventDefault(); setPartType(this, false)">🔄 {{ _('analog') if _('analog') != 'analog' else 'Аналог' }}</span>
+                              onclick="event.stopPropagation(); event.preventDefault(); setPartType(this, false)">{{ _('part_analog') if _('part_analog') != 'part_analog' else 'аналог' }}</span>
                     </div>
                     <div class="quantity-control">
                         <label>{{ _('quantity') if _('quantity') != 'quantity' else 'Кол-во' }}:</label>

@@ -281,6 +281,9 @@ msgstr "פעיל"
 msgid "cancel"
 msgstr "ביטול"
 
+msgid "add"
+msgstr "הוסף"
+
 msgid "save"
 msgstr "שמור"
 
@@ -422,6 +425,12 @@ msgstr "מקורי"
 
 msgid "analog"
 msgstr "תחליף"
+
+msgid "part_orig"
+msgstr "מקורי"
+
+msgid "part_analog"
+msgstr "תחליפי"
 
 msgid "print"
 msgstr "הדפס"
