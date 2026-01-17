@@ -642,6 +642,15 @@
         let partsIndexByCategory = {};
         let refreshTimerId = null;
         let loadOrdersInFlight = false;
+        
+        // Локализация для меток типа детали
+        const partTypeLabels = {
+            'ru': { original: 'ориг', analog: 'аналог', originalFull: 'ОРИГИНАЛ', analogFull: 'АНАЛОГ' },
+            'en': { original: 'orig', analog: 'analog', originalFull: 'ORIGINAL', analogFull: 'ANALOG' },
+            'he': { original: 'מקורי', analog: 'תחליפי', originalFull: 'מקורי', analogFull: 'תחליפי' }
+        };
+        const currentLang = '{{ g.locale if g.locale else "ru" }}';
+        const typeLabels = partTypeLabels[currentLang] || partTypeLabels['ru'];
 
         function startAutoRefresh() {
             if (refreshTimerId) clearInterval(refreshTimerId);
@@ -1002,8 +1011,8 @@
                                             const added = p.added_by_mechanic ? ' <span class="added-badge">➕</span>' : '';
                                             const partType = p.hasOwnProperty('is_original') 
                                                 ? (p.is_original 
-                                                    ? ' <span class="type-badge type-original" style="font-size:0.7em;padding:2px 6px;margin-left:4px;">ориг</span>' 
-                                                    : ' <span class="type-badge type-analog" style="font-size:0.7em;padding:2px 6px;margin-left:4px;">аналог</span>')
+                                                    ? ` <span class="type-badge type-original" style="font-size:0.7em;padding:2px 6px;margin-left:4px;">${typeLabels.original}</span>` 
+                                                    : ` <span class="type-badge type-analog" style="font-size:0.7em;padding:2px 6px;margin-left:4px;">${typeLabels.analog}</span>`)
                                                 : '';
                                             return `<li>${escapeHtml(p.name)}${qty}${partType}${added}</li>`;
                                         } else {
@@ -1012,8 +1021,8 @@
                                     }).join('')}
                                 </ul>
                                     ${order.is_original 
-                                        ? '<span class="type-badge type-original">ОРИГИНАЛ</span>' 
-                                        : '<span class="type-badge type-analog">АНАЛОГ</span>'}
+                                        ? `<span class="type-badge type-original">${typeLabels.originalFull}</span>` 
+                                        : `<span class="type-badge type-analog">${typeLabels.analogFull}</span>`}
                                     ${selectedParts.some(p => typeof p === 'object' && p.added_by_mechanic) 
                                         ? '<div class="added-notice">➕ Добавлена новая запчасть</div>' 
                                         : ''}

@@ -423,6 +423,12 @@ msgstr "מקורי"
 msgid "analog"
 msgstr "תחליף"
 
+msgid "part_orig"
+msgstr "מקורי"
+
+msgid "part_analog"
+msgstr "תחליפי"
+
 msgid "print"
 msgstr "הדפס"
 

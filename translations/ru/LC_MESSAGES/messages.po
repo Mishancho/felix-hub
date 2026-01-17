@@ -423,6 +423,12 @@ msgstr "Оригинал"
 msgid "analog"
 msgstr "Аналог"
 
+msgid "part_orig"
+msgstr "ориг"
+
+msgid "part_analog"
+msgstr "аналог"
+
 msgid "print"
 msgstr "Печать"
 
