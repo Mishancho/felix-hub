@@ -1210,7 +1210,7 @@ def admin_logout():
 
 @app.route('/api/orders')
 def get_orders():
-    """API для получения списка заказов"""
+    """API для получения списка заказов с серверной пагинацией"""
     try:
         # Фильтрация
         status = request.args.get('status')
@@ -1219,6 +1219,24 @@ def get_orders():
         created_from_raw = request.args.get('created_from')
         created_to_raw = request.args.get('created_to')
         lang = request.args.get('lang')
+        
+        # Пагинация
+        page_raw = request.args.get('page', '1')
+        page_size_raw = request.args.get('page_size', '25')
+        
+        try:
+            page = max(1, int(page_raw))
+        except (TypeError, ValueError):
+            page = 1
+        
+        try:
+            page_size = int(page_size_raw)
+        except (TypeError, ValueError):
+            page_size = 25
+        
+        # Ограничиваем размер страницы
+        if page_size not in {15, 25, 50, 100}:
+            page_size = 25
         
         query = Order.query
         
@@ -1255,7 +1273,28 @@ def get_orders():
         if created_to:
             query = query.filter(Order.created_at < (created_to + timedelta(days=1)))
         
-        orders = query.order_by(Order.created_at.desc()).all()
+        # Подсчёт общего количества
+        total_orders = query.count()
+        total_pages = max(1, (total_orders + page_size - 1) // page_size)
+        
+        if page > total_pages:
+            page = total_pages
+        
+        # Статистика по статусам (для текущего фильтра)
+        stats = {
+            'total': total_orders,
+            'new': query.filter(Order.status == 'новый').count(),
+            'in_progress': query.filter(Order.status == 'в работе').count(),
+            'ready': query.filter(Order.status == 'готово').count()
+        }
+        
+        # Пагинированный запрос
+        orders = (
+            query.order_by(Order.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
         
         if not lang:
             lang = g.locale if hasattr(g, 'locale') else 'ru'
@@ -1263,7 +1302,16 @@ def get_orders():
         if lang not in allowed_langs:
             lang = 'ru'
 
-        resp = jsonify([order.to_dict(lang=lang) for order in orders])
+        resp = jsonify({
+            'orders': [order.to_dict(lang=lang) for order in orders],
+            'pagination': {
+                'page': page,
+                'page_size': page_size,
+                'total_orders': total_orders,
+                'total_pages': total_pages
+            },
+            'stats': stats
+        })
         resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
         resp.headers['Pragma'] = 'no-cache'
         resp.headers['Expires'] = '0'
