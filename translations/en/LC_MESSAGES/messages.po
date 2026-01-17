@@ -281,6 +281,9 @@ msgstr "Active"
 msgid "cancel"
 msgstr "Cancel"
 
+msgid "add"
+msgstr "Add"
+
 msgid "save"
 msgstr "Save"
 

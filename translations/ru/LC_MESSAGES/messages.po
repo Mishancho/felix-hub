@@ -281,6 +281,9 @@ msgstr "Активна"
 msgid "cancel"
 msgstr "Отмена"
 
+msgid "add"
+msgstr "Добавить"
+
 msgid "save"
 msgstr "Сохранить"
 
