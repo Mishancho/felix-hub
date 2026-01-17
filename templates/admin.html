@@ -911,6 +911,7 @@
                 const createdTo = document.getElementById('filterDateTo').value;
                 
                 let url = '/api/orders?';
+                url += `lang=${encodeURIComponent(currentLang)}&`;
                 url += `page=${currentPage}&`;
                 url += `page_size=${pageSize}&`;
                 if (status !== 'все') url += `status=${encodeURIComponent(status)}&`;
