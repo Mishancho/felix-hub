@@ -639,6 +639,8 @@
         let orders = [];
         let pageSize = 25;
         let currentPage = 1;
+        let totalOrders = 0;
+        let totalPagesFromServer = 1;
         let partsIndexByCategory = {};
         let refreshTimerId = null;
         let loadOrdersInFlight = false;
@@ -676,11 +678,11 @@
                 localStorage.setItem('adminOrdersPageSize', String(newSize));
             } catch (_) {
             }
-            renderOrders();
+            loadOrders();
         }
 
         function totalPages() {
-            return Math.max(1, Math.ceil(orders.length / pageSize));
+            return totalPagesFromServer;
         }
 
         function clampCurrentPage() {
@@ -692,7 +694,7 @@
         function goToPage(page) {
             currentPage = page;
             clampCurrentPage();
-            renderOrders();
+            loadOrders();
         }
 
         function renderPaginationControls() {
@@ -700,7 +702,7 @@
             const summary = document.getElementById('ordersSummary');
             if (!controls || !summary) return;
 
-            if (orders.length === 0) {
+            if (totalOrders === 0) {
                 controls.style.display = 'none';
                 summary.textContent = '';
                 return;
@@ -708,11 +710,10 @@
 
             clampCurrentPage();
 
-            const total = orders.length;
             const tp = totalPages();
-            const startIdx = (currentPage - 1) * pageSize;
-            const endIdx = Math.min(startIdx + pageSize, total);
-            summary.textContent = `Показано ${startIdx + 1}-${endIdx} из ${total}`;
+            const startIdx = (currentPage - 1) * pageSize + 1;
+            const endIdx = Math.min(startIdx + orders.length - 1, totalOrders);
+            summary.textContent = `Показано ${startIdx}-${endIdx} из ${totalOrders}`;
 
             if (tp <= 1) {
                 controls.style.display = 'none';
@@ -898,7 +899,7 @@
             startAutoRefresh();
         });
         
-        // Загрузка заказов с сервера
+        // Загрузка заказов с сервера (с серверной пагинацией)
         async function loadOrders() {
             if (loadOrdersInFlight) return;
             loadOrdersInFlight = true;
@@ -910,6 +911,8 @@
                 const createdTo = document.getElementById('filterDateTo').value;
                 
                 let url = '/api/orders?';
+                url += `page=${currentPage}&`;
+                url += `page_size=${pageSize}&`;
                 if (status !== 'все') url += `status=${encodeURIComponent(status)}&`;
                 if (plate) url += `plate_number=${encodeURIComponent(plate)}&`;
                 if (mechanic) url += `mechanic=${encodeURIComponent(mechanic)}&`;
@@ -918,7 +921,14 @@
                 url += `_=${Date.now()}&`;
                 
                 const response = await fetch(url, { cache: 'no-store' });
-                orders = await response.json();
+                const data = await response.json();
+                
+                // Новый формат с пагинацией
+                orders = data.orders || [];
+                totalOrders = data.pagination?.total_orders || orders.length;
+                totalPagesFromServer = data.pagination?.total_pages || 1;
+                currentPage = data.pagination?.page || 1;
+                serverStats = data.stats || { total: 0, new: 0, in_progress: 0, ready: 0 };
                 
                 renderOrders();
                 updateStats();
@@ -965,8 +975,8 @@
             }
 
             clampCurrentPage();
-            const startIdx = (currentPage - 1) * pageSize;
-            const pageOrders = orders.slice(startIdx, startIdx + pageSize);
+            // Данные уже пагинированы с сервера
+            const pageOrders = orders;
             
             let html = `
                 <table>
@@ -1067,16 +1077,13 @@
         }
         
         // Обновление статистики
+        let serverStats = { total: 0, new: 0, in_progress: 0, ready: 0 };
+        
         function updateStats() {
-            const total = orders.length;
-            const newOrders = orders.filter(o => o.status === 'новый').length;
-            const inProgress = orders.filter(o => o.status === 'в работе').length;
-            const ready = orders.filter(o => o.status === 'готово').length;
-            
-            document.getElementById('statTotal').textContent = total;
-            document.getElementById('statNew').textContent = newOrders;
-            document.getElementById('statInProgress').textContent = inProgress;
-            document.getElementById('statReady').textContent = ready;
+            document.getElementById('statTotal').textContent = serverStats.total;
+            document.getElementById('statNew').textContent = serverStats.new;
+            document.getElementById('statInProgress').textContent = serverStats.in_progress;
+            document.getElementById('statReady').textContent = serverStats.ready;
         }
         
         // Обновление статуса заказа
