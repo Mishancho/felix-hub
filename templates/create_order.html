@@ -162,6 +162,48 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
+        
+        /* Переключатель оригинал/аналог для каждой детали */
+        .checkbox-item .part-type-toggle {
+            display: none;
+            gap: 4px;
+            margin-left: 8px;
+        }
+        
+        .checkbox-item.checked .part-type-toggle {
+            display: flex;
+        }
+        
+        .part-type-toggle .type-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #f8f9fa;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .part-type-toggle .type-btn:hover {
+            border-color: #667eea;
+        }
+        
+        .part-type-toggle .type-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .part-type-toggle .type-btn.original.active {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        
+        .part-type-toggle .type-btn.analog.active {
+            background: #f59e0b;
+            border-color: #f59e0b;
+        }
 
         .radio-group {
             display: flex;
@@ -686,6 +728,12 @@
                 
                 const safeId = 'part_' + String(partId || partName).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                 
+                // Получаем значение is_original из сохранённых данных или из глобального переключателя
+                const globalIsOriginal = document.querySelector('input[name="is_original"]:checked').value === 'true';
+                const partIsOriginal = isChecked && selectedPartsGlobal[partKey].hasOwnProperty('is_original') 
+                    ? selectedPartsGlobal[partKey].is_original 
+                    : globalIsOriginal;
+                
                 item.innerHTML = `
                     <input type="checkbox" 
                            id="${safeId}"
@@ -694,6 +742,12 @@
                            data-part-id="${partId || ''}"
                            ${isChecked ? 'checked' : ''}>
                     <span class="part-name">${partName}</span>
+                    <div class="part-type-toggle">
+                        <span class="type-btn original ${partIsOriginal ? 'active' : ''}" 
+                              onclick="event.stopPropagation(); setPartType(this, true)">💎 {{ _('original') if _('original') != 'original' else 'Ориг' }}</span>
+                        <span class="type-btn analog ${!partIsOriginal ? 'active' : ''}" 
+                              onclick="event.stopPropagation(); setPartType(this, false)">🔄 {{ _('analog') if _('analog') != 'analog' else 'Аналог' }}</span>
+                    </div>
                     <div class="quantity-control">
                         <label>{{ _('quantity') if _('quantity') != 'quantity' else 'Кол-во' }}:</label>
                         <input type="number" 
@@ -717,11 +771,16 @@
                     // Переключаем класс checked на родительском label
                     if (this.checked) {
                         item.classList.add('checked');
+                        // Получаем текущее значение is_original из переключателя детали или глобального
+                        const typeToggle = item.querySelector('.part-type-toggle');
+                        const isOriginal = typeToggle.querySelector('.type-btn.original').classList.contains('active');
+                        
                         // Добавляем в глобальный объект с количеством и ID
                         selectedPartsGlobal[partKey] = {
                             name: this.value,
                             quantity: parseInt(quantityInput.value) || 1,
-                            part_id: partId ? parseInt(partId) : null
+                            part_id: partId ? parseInt(partId) : null,
+                            is_original: isOriginal
                         };
                     } else {
                         item.classList.remove('checked');
@@ -755,6 +814,46 @@
                 const manualCount = document.querySelectorAll('.manual-part-input').length;
                 const total = Object.keys(selectedPartsGlobal).length + manualCount;
                 counter.textContent = '{{ _("selected") if _("selected") != "selected" else "Выбрано" }}: ' + total;
+            }
+        }
+        
+        // Установка типа детали (оригинал/аналог) для конкретной позиции
+        function setPartType(btn, isOriginal) {
+            const toggle = btn.closest('.part-type-toggle');
+            const item = btn.closest('.checkbox-item');
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            
+            // Обновляем UI
+            toggle.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Обновляем данные если деталь выбрана
+            if (checkbox && checkbox.checked) {
+                const partId = checkbox.getAttribute('data-part-id');
+                const partKey = partId || checkbox.value;
+                if (selectedPartsGlobal[partKey]) {
+                    selectedPartsGlobal[partKey].is_original = isOriginal;
+                }
+            }
+        }
+        
+        // Применение глобального типа ко всем деталям
+        function applyGlobalPartType(isOriginal) {
+            // Обновляем все видимые переключатели
+            document.querySelectorAll('.part-type-toggle').forEach(toggle => {
+                toggle.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+                if (isOriginal) {
+                    toggle.querySelector('.type-btn.original').classList.add('active');
+                } else {
+                    toggle.querySelector('.type-btn.analog').classList.add('active');
+                }
+            });
+            
+            // Обновляем все выбранные детали в selectedPartsGlobal
+            for (const key in selectedPartsGlobal) {
+                if (!selectedPartsGlobal[key].is_label) { // Не меняем для меток типа "БЕЗ ПРИСАДОК"
+                    selectedPartsGlobal[key].is_original = isOriginal;
+                }
             }
         }
 
@@ -800,7 +899,8 @@
                 const part = selectedPartsGlobal[key];
                 const partData = {
                     name: part.name,
-                    quantity: part.quantity
+                    quantity: part.quantity,
+                    is_original: part.hasOwnProperty('is_original') ? part.is_original : (document.querySelector('input[name="is_original"]:checked').value === 'true')
                 };
                 
                 // Если есть part_id, добавляем его для перевода
@@ -890,6 +990,14 @@
         toggleAdditives(null);
         syncRadioGroupActive(document.getElementById('additives-group'));
         loadCatalog();
+        
+        // Обработчик глобального переключателя оригинал/аналог
+        document.querySelectorAll('input[name="is_original"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const isOriginal = this.value === 'true';
+                applyGlobalPartType(isOriginal);
+            });
+        });
     </script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
