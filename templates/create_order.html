@@ -458,37 +458,6 @@
             color: #999;
             white-space: nowrap;
         }
-        .parts-search-type-toggle {
-            display: none;
-            gap: 3px;
-            margin-left: 8px;
-        }
-        .parts-search-item.selected .parts-search-type-toggle {
-            display: flex;
-        }
-        .parts-search-type-btn {
-            font-size: 11px;
-            padding: 2px 7px;
-            border-radius: 10px;
-            border: 1px solid #ccc;
-            background: #f5f5f5;
-            color: #666;
-            cursor: pointer;
-            line-height: 1.4;
-            white-space: nowrap;
-            font-weight: 500;
-            transition: all 0.15s;
-        }
-        .parts-search-type-btn.active-orig {
-            background: #4caf50;
-            border-color: #4caf50;
-            color: #fff;
-        }
-        .parts-search-type-btn.active-analog {
-            background: #f44336;
-            border-color: #f44336;
-            color: #fff;
-        }
         .parts-search-no-results {
             padding: 12px;
             color: #999;
@@ -876,8 +845,6 @@
                     matches.forEach(part => {
                         const key = getPartKey(part);
                         const isSelected = selectedPartsGlobal.hasOwnProperty(key);
-                        const partIsOriginal = isSelected ? selectedPartsGlobal[key].is_original : true;
-
                         const item = document.createElement('div');
                         item.className = 'parts-search-item' + (isSelected ? ' selected' : '');
                         item.dataset.key = key;
@@ -894,53 +861,13 @@
                         catSpan.className = 'parts-search-category';
                         catSpan.textContent = part.category;
 
-                        // Кнопки Оригинал/Аналог (видны только у выбранных)
-                        const typeToggle = document.createElement('div');
-                        typeToggle.className = 'parts-search-type-toggle';
-
-                        const origBtn = document.createElement('button');
-                        origBtn.type = 'button';
-                        origBtn.className = 'parts-search-type-btn' + (isSelected && partIsOriginal ? ' active-orig' : '');
-                        origBtn.textContent = '{{ _("original") if _("original") != "original" else "Ориг" }}';
-
-                        const analogBtn = document.createElement('button');
-                        analogBtn.type = 'button';
-                        analogBtn.className = 'parts-search-type-btn' + (isSelected && !partIsOriginal ? ' active-analog' : '');
-                        analogBtn.textContent = '{{ _("analog") if _("analog") != "analog" else "Аналог" }}';
-
-                        origBtn.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (selectedPartsGlobal[key]) {
-                                selectedPartsGlobal[key].is_original = true;
-                                origBtn.className = 'parts-search-type-btn active-orig';
-                                analogBtn.className = 'parts-search-type-btn';
-                                updatePartsCounter();
-                            }
-                        });
-
-                        analogBtn.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (selectedPartsGlobal[key]) {
-                                selectedPartsGlobal[key].is_original = false;
-                                origBtn.className = 'parts-search-type-btn';
-                                analogBtn.className = 'parts-search-type-btn active-analog';
-                                updatePartsCounter();
-                            }
-                        });
-
-                        typeToggle.appendChild(origBtn);
-                        typeToggle.appendChild(analogBtn);
-
                         item.appendChild(check);
                         item.appendChild(nameSpan);
-                        item.appendChild(typeToggle);
                         item.appendChild(catSpan);
 
                         item.addEventListener('mousedown', function(e) {
                             e.preventDefault();
-                            toggleSearchPart(part, item, check, origBtn, analogBtn);
+                            toggleSearchPart(part, item, check);
                         });
 
                         dropdown.appendChild(item);
@@ -949,16 +876,14 @@
                 dropdown.style.display = 'block';
             }
 
-            function toggleSearchPart(part, item, check, origBtn, analogBtn) {
+            function toggleSearchPart(part, item, check) {
                 const key = getPartKey(part);
                 if (selectedPartsGlobal.hasOwnProperty(key)) {
-                    // Снять выбор
                     delete selectedPartsGlobal[key];
                     item.classList.remove('selected');
                     check.textContent = '';
                     unselectInPartsList(part);
                 } else {
-                    // Выбрать
                     const globalIsOriginal = document.querySelector('input[name="is_original"]:checked').value === 'true';
                     selectedPartsGlobal[key] = {
                         name: part.name,
@@ -968,11 +893,6 @@
                     };
                     item.classList.add('selected');
                     check.textContent = '✓';
-                    // Обновить кнопки типа
-                    if (origBtn && analogBtn) {
-                        origBtn.className = 'parts-search-type-btn' + (globalIsOriginal ? ' active-orig' : '');
-                        analogBtn.className = 'parts-search-type-btn' + (!globalIsOriginal ? ' active-analog' : '');
-                    }
                     selectInPartsList(part);
                 }
                 updatePartsCounter();
