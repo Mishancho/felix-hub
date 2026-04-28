@@ -479,16 +479,76 @@
         .selected-part-chip {
             display: inline-flex;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
             background: #f0f1fb;
             border: 1px solid #d0d3f0;
             color: #4a4e9a;
-            border-radius: 4px;
-            padding: 2px 6px 2px 7px;
+            border-radius: 6px;
+            padding: 3px 5px 3px 8px;
             font-size: 12px;
             font-weight: 400;
             line-height: 1.4;
         }
+        .chip-name {
+            white-space: nowrap;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chip-divider {
+            width: 1px;
+            height: 14px;
+            background: #c5c8e8;
+            margin: 0 1px;
+        }
+        .chip-qty {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .chip-qty-btn {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #b0b4dc;
+            border-radius: 3px;
+            background: #fff;
+            color: #4a4e9a;
+            font-size: 12px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chip-qty-btn:hover { background: #e0e2f5; }
+        .chip-qty-val {
+            min-width: 14px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .chip-type {
+            display: inline-flex;
+            border: 1px solid #b0b4dc;
+            border-radius: 3px;
+            overflow: hidden;
+            font-size: 10px;
+        }
+        .chip-type-btn {
+            padding: 1px 5px;
+            cursor: pointer;
+            background: #fff;
+            color: #888;
+            border: none;
+            line-height: 1.4;
+            transition: background 0.1s, color 0.1s;
+        }
+        .chip-type-btn.active {
+            background: #667eea;
+            color: #fff;
+        }
+        .chip-type-btn:not(.active):hover { background: #e8eafc; }
         .selected-part-chip .chip-remove {
             cursor: pointer;
             font-size: 13px;
@@ -1072,12 +1132,59 @@
                 const chip = document.createElement('span');
                 chip.className = 'selected-part-chip';
                 const name = data.name || key;
-                const qty = data.quantity > 1 ? ` ×${data.quantity}` : '';
-                chip.innerHTML = `${name}${qty}<button type="button" class="chip-remove" title="Убрать">×</button>`;
-                chip.querySelector('.chip-remove').addEventListener('click', function() {
-                    // Найдём part объект по key чтобы использовать toggleSearchPart или просто удалим
+                const qty = data.quantity || 1;
+                const isOrig = data.is_original !== false; // по умолчанию оригинал
+
+                chip.innerHTML = `
+                    <span class="chip-name" title="${name}">${name}</span>
+                    <span class="chip-divider"></span>
+                    <span class="chip-qty">
+                        <button type="button" class="chip-qty-btn chip-qty-minus">−</button>
+                        <span class="chip-qty-val">${qty}</span>
+                        <button type="button" class="chip-qty-btn chip-qty-plus">+</button>
+                    </span>
+                    <span class="chip-divider"></span>
+                    <span class="chip-type">
+                        <button type="button" class="chip-type-btn chip-orig${isOrig ? ' active' : ''}">О</button>
+                        <button type="button" class="chip-type-btn chip-analog${!isOrig ? ' active' : ''}">А</button>
+                    </span>
+                    <button type="button" class="chip-remove" title="Убрать">×</button>`;
+
+                // Кол-во −
+                chip.querySelector('.chip-qty-minus').addEventListener('click', () => {
+                    const cur = selectedPartsGlobal[key] && selectedPartsGlobal[key].quantity || 1;
+                    if (cur <= 1) return;
+                    selectedPartsGlobal[key].quantity = cur - 1;
+                    // Sync checkbox quantity input
+                    document.querySelectorAll('#partsList input.part-quantity').forEach(inp => {
+                        const cb = inp.closest('.checkbox-item') && inp.closest('.checkbox-item').querySelector('input[type="checkbox"]');
+                        if (cb && String(cb.getAttribute('data-part-id') || cb.value) === String(key)) inp.value = cur - 1;
+                    });
+                    renderSelectedChips();
+                });
+                // Кол-во +
+                chip.querySelector('.chip-qty-plus').addEventListener('click', () => {
+                    const cur = selectedPartsGlobal[key] && selectedPartsGlobal[key].quantity || 1;
+                    selectedPartsGlobal[key].quantity = cur + 1;
+                    document.querySelectorAll('#partsList input.part-quantity').forEach(inp => {
+                        const cb = inp.closest('.checkbox-item') && inp.closest('.checkbox-item').querySelector('input[type="checkbox"]');
+                        if (cb && String(cb.getAttribute('data-part-id') || cb.value) === String(key)) inp.value = cur + 1;
+                    });
+                    renderSelectedChips();
+                });
+                // Оригинал
+                chip.querySelector('.chip-orig').addEventListener('click', () => {
+                    if (selectedPartsGlobal[key]) selectedPartsGlobal[key].is_original = true;
+                    renderSelectedChips();
+                });
+                // Аналог
+                chip.querySelector('.chip-analog').addEventListener('click', () => {
+                    if (selectedPartsGlobal[key]) selectedPartsGlobal[key].is_original = false;
+                    renderSelectedChips();
+                });
+                // Удалить
+                chip.querySelector('.chip-remove').addEventListener('click', () => {
                     delete selectedPartsGlobal[key];
-                    // Снять чекбокс в partsList если открыта соответствующая категория
                     document.querySelectorAll('#partsList input[type="checkbox"]').forEach(cb => {
                         const cbKey = cb.getAttribute('data-part-id') || cb.value;
                         if (String(cbKey) === String(key)) {
@@ -1087,6 +1194,7 @@
                     });
                     updatePartsCounter();
                 });
+
                 container.appendChild(chip);
             });
         }
