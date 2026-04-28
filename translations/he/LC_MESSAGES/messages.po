@@ -832,3 +832,10 @@ msgstr "ללא תוספים"
 
 msgid "no_additives"
 msgstr "ללא תוספים"
+
+msgid "search_parts_placeholder"
+msgstr "חיפוש חלקים..."
+
+msgid "search_no_results"
+msgstr "לא נמצאו תוצאות"
+

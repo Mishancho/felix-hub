@@ -427,6 +427,75 @@
                 font-size: 16px;
             }
         }
+
+        /* ── Поиск запчастей ── */
+        .parts-search-wrapper {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .parts-search-input {
+            width: 100%;
+            padding: 9px 14px 9px 36px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 10px center;
+        }
+        [dir="rtl"] .parts-search-input {
+            padding: 9px 36px 9px 14px;
+            background-position: calc(100% - 10px) center;
+        }
+        .parts-search-input:focus {
+            outline: none;
+            border-color: #6c63ff;
+            box-shadow: 0 0 0 2px rgba(108,99,255,0.15);
+        }
+        .parts-search-dropdown {
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .parts-search-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            gap: 8px;
+            transition: background 0.1s;
+        }
+        .parts-search-item:hover { background: #f5f5f5; }
+        .parts-search-item.selected { background: #e8f4fd; }
+        .parts-search-check {
+            width: 16px;
+            min-width: 16px;
+            color: #6c63ff;
+            font-weight: bold;
+            text-align: center;
+        }
+        .parts-search-name {
+            flex: 1;
+            font-size: 14px;
+        }
+        .parts-search-category {
+            font-size: 11px;
+            color: #999;
+            white-space: nowrap;
+        }
+        .parts-search-no-results {
+            padding: 12px;
+            color: #999;
+            font-size: 14px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -489,6 +558,14 @@
 
             <div class="form-group">
                 <label>{{ _('select_parts_from_list') }}:</label>
+                <div class="parts-search-wrapper">
+                    <input type="text"
+                           id="partsSearchInput"
+                           class="parts-search-input"
+                           placeholder="{{ _('search_parts_placeholder') }}"
+                           autocomplete="off">
+                    <div id="partsSearchDropdown" class="parts-search-dropdown" style="display:none;"></div>
+                </div>
                 <div id="partsList" class="checkbox-group">
                     <p style="color: #999; font-size: 14px;">{{ _('select_category_first') }}</p>
                 </div>
@@ -548,6 +625,7 @@
 
     <script>
         let catalog = {};
+        let allPartsFlat = [];
         let manualPartCounter = 0;
         const currentLang = '{{ g.locale or "ru" }}';
         
@@ -707,6 +785,19 @@
                 const response = await fetch(`/api/parts/catalog?active_only=true&lang=${currentLang}`);
                 catalog = await response.json();
                 
+                // Строим плоский массив всех запчастей для поиска
+                allPartsFlat = [];
+                Object.entries(catalog).forEach(([categoryName, parts]) => {
+                    parts.forEach(part => {
+                        allPartsFlat.push({
+                            id: typeof part === 'object' ? part.id : null,
+                            name: typeof part === 'object' ? part.name : part,
+                            name_ru: typeof part === 'object' ? (part.name_ru || part.name) : part,
+                            category: categoryName
+                        });
+                    });
+                });
+
                 // Заполняем select категорий
                 const categorySelect = document.getElementById('category');
                 const categories = Object.keys(catalog).sort();
@@ -725,6 +816,121 @@
                 console.error('{{ _("error_loading_catalog") }}:', error);
             }
         }
+
+        // ── Поиск по каталогу ──────────────────────────────────────────
+        (function initPartsSearch() {
+            const searchInput = document.getElementById('partsSearchInput');
+            const dropdown   = document.getElementById('partsSearchDropdown');
+            const noResults  = '{{ _("search_no_results") }}';
+
+            function getPartKey(part) {
+                return part.id != null ? part.id : part.name;
+            }
+
+            function renderDropdown(term) {
+                if (term.length < 2) { dropdown.style.display = 'none'; return; }
+                const t = term.toLowerCase();
+                const matches = allPartsFlat.filter(p => p.name.toLowerCase().includes(t)).slice(0, 15);
+                dropdown.innerHTML = '';
+                if (matches.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'parts-search-no-results';
+                    empty.textContent = noResults;
+                    dropdown.appendChild(empty);
+                } else {
+                    matches.forEach(part => {
+                        const key = getPartKey(part);
+                        const isSelected = selectedPartsGlobal.hasOwnProperty(key);
+                        const item = document.createElement('div');
+                        item.className = 'parts-search-item' + (isSelected ? ' selected' : '');
+                        item.dataset.key = key;
+
+                        const check = document.createElement('span');
+                        check.className = 'parts-search-check';
+                        check.textContent = isSelected ? '✓' : '';
+
+                        const nameSpan = document.createElement('span');
+                        nameSpan.className = 'parts-search-name';
+                        nameSpan.textContent = part.name;
+
+                        const catSpan = document.createElement('span');
+                        catSpan.className = 'parts-search-category';
+                        catSpan.textContent = part.category;
+
+                        item.appendChild(check);
+                        item.appendChild(nameSpan);
+                        item.appendChild(catSpan);
+
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            toggleSearchPart(part, item, check);
+                        });
+
+                        dropdown.appendChild(item);
+                    });
+                }
+                dropdown.style.display = 'block';
+            }
+
+            function toggleSearchPart(part, item, check) {
+                const key = getPartKey(part);
+                if (selectedPartsGlobal.hasOwnProperty(key)) {
+                    delete selectedPartsGlobal[key];
+                    item.classList.remove('selected');
+                    check.textContent = '';
+                    unselectInPartsList(part);
+                } else {
+                    const globalIsOriginal = document.querySelector('input[name="is_original"]:checked').value === 'true';
+                    selectedPartsGlobal[key] = {
+                        name: part.name,
+                        quantity: 1,
+                        part_id: part.id != null ? parseInt(part.id) : null,
+                        is_original: globalIsOriginal
+                    };
+                    item.classList.add('selected');
+                    check.textContent = '✓';
+                    selectInPartsList(part);
+                }
+                updatePartsCounter();
+            }
+
+            function selectInPartsList(part) {
+                const key = getPartKey(part);
+                document.querySelectorAll('#partsList input[type="checkbox"]').forEach(cb => {
+                    const cbKey = cb.getAttribute('data-part-id') || cb.value;
+                    if (String(cbKey) === String(key)) {
+                        cb.checked = true;
+                        cb.closest('.checkbox-item') && cb.closest('.checkbox-item').classList.add('checked');
+                    }
+                });
+            }
+
+            function unselectInPartsList(part) {
+                const key = getPartKey(part);
+                document.querySelectorAll('#partsList input[type="checkbox"]').forEach(cb => {
+                    const cbKey = cb.getAttribute('data-part-id') || cb.value;
+                    if (String(cbKey) === String(key)) {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item') && cb.closest('.checkbox-item').classList.remove('checked');
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', function() {
+                renderDropdown(this.value.trim());
+            });
+
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') { dropdown.style.display = 'none'; }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.parts-search-wrapper')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        })();
+        // ── конец поиска ───────────────────────────────────────────────
 
         // Обработка изменения категории
         document.getElementById('category').addEventListener('change', function() {

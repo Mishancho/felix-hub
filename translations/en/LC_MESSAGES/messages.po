@@ -829,3 +829,10 @@ msgstr "Without additives"
 
 msgid "no_additives"
 msgstr "NO ADDITIVES"
+
+msgid "search_parts_placeholder"
+msgstr "Search parts..."
+
+msgid "search_no_results"
+msgstr "No results found"
+

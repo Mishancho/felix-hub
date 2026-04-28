@@ -836,4 +836,10 @@ msgstr "Без присадок"
 msgid "no_additives"
 msgstr "БЕЗ ПРИСАДОК"
 
+msgid "search_parts_placeholder"
+msgstr "Поиск запчастей..."
+
+msgid "search_no_results"
+msgstr "Ничего не найдено"
+
 # Updated additives translations
