@@ -405,18 +405,34 @@
             position: relative;
             margin-bottom: 10px;
         }
+        .parts-search-wrapper {
+            position: relative;
+        }
+        .parts-search-icon {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+            color: #999;
+        }
+        [dir="rtl"] .parts-search-icon {
+            left: auto;
+            right: 11px;
+        }
         .parts-search-input {
             width: 100%;
-            padding: 9px 14px 9px 36px;
+            padding: 9px 14px 9px 34px;
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 14px;
             box-sizing: border-box;
-            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 10px center;
+            background: #fff;
         }
         [dir="rtl"] .parts-search-input {
-            padding: 9px 36px 9px 14px;
-            background-position: calc(100% - 10px) center;
+            padding: 9px 34px 9px 14px;
         }
         .parts-search-input:focus {
             outline: none;
@@ -467,6 +483,43 @@
             color: #999;
             font-size: 14px;
             text-align: center;
+        }
+
+        /* Выбранные детали — чипы */
+        .selected-parts-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+            min-height: 0;
+        }
+        .selected-parts-chips:empty {
+            display: none;
+        }
+        .selected-part-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #eef0ff;
+            border: 1px solid #c5c9f5;
+            color: #3c3f8f;
+            border-radius: 20px;
+            padding: 4px 10px 4px 10px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .selected-part-chip .chip-remove {
+            cursor: pointer;
+            font-size: 15px;
+            line-height: 1;
+            color: #888;
+            margin-left: 2px;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+        .selected-part-chip .chip-remove:hover {
+            color: #e53935;
         }
     </style>
 </head>
@@ -530,6 +583,7 @@
             <div class="form-group">
                 <label>{{ _('select_parts_from_list') }}:</label>
                 <div class="parts-search-wrapper">
+                    <svg class="parts-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <input type="text"
                            id="partsSearchInput"
                            class="parts-search-input"
@@ -537,6 +591,7 @@
                            autocomplete="off">
                     <div id="partsSearchDropdown" class="parts-search-dropdown" style="display:none;"></div>
                 </div>
+                <div id="selectedPartsChips" class="selected-parts-chips"></div>
                 <div id="partsList" class="checkbox-group">
                     <p style="color: #999; font-size: 14px;">{{ _('select_category_first') }}</p>
                 </div>
@@ -1025,6 +1080,34 @@
                 const total = Object.keys(selectedPartsGlobal).length + manualCount;
                 counter.textContent = '{{ _("selected") if _("selected") != "selected" else "Выбрано" }}: ' + total;
             }
+            renderSelectedChips();
+        }
+
+        function renderSelectedChips() {
+            const container = document.getElementById('selectedPartsChips');
+            if (!container) return;
+            container.innerHTML = '';
+            Object.entries(selectedPartsGlobal).forEach(([key, data]) => {
+                const chip = document.createElement('span');
+                chip.className = 'selected-part-chip';
+                const name = data.name || key;
+                const qty = data.quantity > 1 ? ` ×${data.quantity}` : '';
+                chip.innerHTML = `${name}${qty}<button type="button" class="chip-remove" title="Убрать">×</button>`;
+                chip.querySelector('.chip-remove').addEventListener('click', function() {
+                    // Найдём part объект по key чтобы использовать toggleSearchPart или просто удалим
+                    delete selectedPartsGlobal[key];
+                    // Снять чекбокс в partsList если открыта соответствующая категория
+                    document.querySelectorAll('#partsList input[type="checkbox"]').forEach(cb => {
+                        const cbKey = cb.getAttribute('data-part-id') || cb.value;
+                        if (String(cbKey) === String(key)) {
+                            cb.checked = false;
+                            cb.closest('.checkbox-item') && cb.closest('.checkbox-item').classList.remove('checked');
+                        }
+                    });
+                    updatePartsCounter();
+                });
+                container.appendChild(chip);
+            });
         }
         
         // Установка типа детали (оригинал/аналог) для конкретной позиции
