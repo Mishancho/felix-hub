@@ -655,8 +655,8 @@
             </div>
 
             <div class="form-group">
-                <label for="category">{{ _('parts_category') }} *</label>
-                <select id="category" name="category" required>
+                <label for="category">{{ _('parts_category') }}</label>
+                <select id="category" name="category">
                     <option value="">{{ _('select_category') }}</option>
                 </select>
             </div>
@@ -1415,6 +1415,50 @@
         toggleAdditives(null);
         syncRadioGroupActive(document.getElementById('additives-group'));
         loadCatalog();
+
+        // Глобальная кнопка ОРИГИНАЛ/АНАЛОГ — синхронизирует все детали и кнопки дропдауна
+        function applyGlobalPartType(isOriginal) {
+            // Обновляем все видимые .part-type-toggle (чекбокс-список)
+            document.querySelectorAll('.part-type-toggle').forEach(toggle => {
+                toggle.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+                if (isOriginal) {
+                    toggle.querySelector('.type-btn.original').classList.add('active');
+                } else {
+                    toggle.querySelector('.type-btn.analog').classList.add('active');
+                }
+            });
+
+            // Обновляем кнопки О/А в строках открытого дропдауна
+            document.querySelectorAll('.parts-search-item.selected .item-controls').forEach(controls => {
+                const origBtn   = controls.querySelector('.item-orig');
+                const analogBtn = controls.querySelector('.item-analog');
+                if (!origBtn || !analogBtn) return;
+                if (isOriginal) {
+                    origBtn.classList.add('active');
+                    analogBtn.classList.remove('active');
+                } else {
+                    analogBtn.classList.add('active');
+                    origBtn.classList.remove('active');
+                }
+            });
+
+            // Обновляем selectedPartsGlobal
+            for (const key in selectedPartsGlobal) {
+                if (!selectedPartsGlobal[key].is_label) {
+                    selectedPartsGlobal[key].is_original = isOriginal;
+                }
+            }
+
+            // Перерендериваем чипы
+            updatePartsCounter();
+        }
+
+        // Вешаем обработчик на радио-кнопки ОРИГИНАЛ/АНАЛОГ
+        document.querySelectorAll('input[name="is_original"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                applyGlobalPartType(this.value === 'true');
+            });
+        });
     </script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>
