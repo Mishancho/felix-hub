@@ -627,8 +627,8 @@
             </div>
 
             <div class="form-group">
-                <label for="category">{{ _('parts_category') }} *</label>
-                <select id="category" name="category" required>
+                <label for="category">{{ _('parts_category') }}</label>
+                <select id="category" name="category">
                     <option value="">{{ _('select_category') }}</option>
                 </select>
             </div>
@@ -1398,6 +1398,38 @@
                 applyGlobalPartType(isOriginal);
             });
         });
+
+        // Auto-format Israeli plate number: XX-XXX-XX or XXX-XX-XXX
+        (function() {
+            const plateInput = document.getElementById('plate_number');
+            if (!plateInput) return;
+
+            function formatPlate(raw) {
+                const digits = raw.replace(/\D/g, '');
+                if (digits.length <= 7) {
+                    // Old format: XX-XXX-XX (7 digits)
+                    let out = digits.slice(0, 2);
+                    if (digits.length > 2) out += '-' + digits.slice(2, 5);
+                    if (digits.length > 5) out += '-' + digits.slice(5, 7);
+                    return out;
+                } else {
+                    // New format: XXX-XX-XXX (8 digits)
+                    let out = digits.slice(0, 3);
+                    if (digits.length > 3) out += '-' + digits.slice(3, 5);
+                    if (digits.length > 5) out += '-' + digits.slice(5, 8);
+                    return out;
+                }
+            }
+
+            plateInput.addEventListener('input', function() {
+                const pos = this.selectionStart;
+                const prevLen = this.value.length;
+                this.value = formatPlate(this.value);
+                // Adjust cursor: if we added dashes, shift right
+                const delta = this.value.length - prevLen;
+                this.setSelectionRange(pos + delta, pos + delta);
+            });
+        })();
     </script>
     <script src="{{ url_for('static', filename='js/mobile-enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/nav-scroll.js') }}"></script>

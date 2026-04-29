@@ -1052,10 +1052,7 @@
                                             return `<li>${escapeHtml(p)}</li>`;
                                         }
                                     }).join('')}
-                                </ul>
-                                    ${order.is_original 
-                                        ? `<span class="type-badge type-original">${typeLabels.originalFull}</span>` 
-                                        : `<span class="type-badge type-analog">${typeLabels.analogFull}</span>`}
+                                 </ul>
                                     ${selectedParts.some(p => typeof p === 'object' && p.added_by_mechanic) 
                                         ? '<div class="added-notice">➕ Добавлена новая запчасть</div>' 
                                         : ''}

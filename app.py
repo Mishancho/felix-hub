@@ -1053,9 +1053,6 @@ def submit_order():
         if not validate_plate_number(data['plate_number']):
             return jsonify({'error': 'Неверный формат гос номера'}), 400
         
-        if not data.get('category'):
-            return jsonify({'error': 'Категория обязательна'}), 400
-        
         if not data.get('selected_parts') or len(data['selected_parts']) == 0:
             return jsonify({'error': 'Выберите хотя бы одну деталь'}), 400
         
