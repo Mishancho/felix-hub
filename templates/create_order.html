@@ -1255,6 +1255,9 @@
                     selectedPartsGlobal[key].is_original = isOriginal;
                 }
             }
+
+            // Перерендериваем чипы чтобы теги О/А обновились визуально
+            updatePartsCounter();
         }
 
         // Добавление ручной детали

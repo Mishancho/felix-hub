@@ -413,6 +413,10 @@
             background: #f8d7da;
             color: #721c24;
         }
+        .type-mixed {
+            background: #e2d9f3;
+            color: #4a2a7a;
+        }
         .added-badge {
             display: inline-block;
             margin-left: 6px;
@@ -669,9 +673,9 @@
         
         // Локализация для меток типа детали
         const partTypeLabels = {
-            'ru': { original: 'ориг', analog: 'аналог', originalFull: 'ОРИГИНАЛ', analogFull: 'АНАЛОГ' },
-            'en': { original: 'orig', analog: 'analog', originalFull: 'ORIGINAL', analogFull: 'ANALOG' },
-            'he': { original: 'מקורי', analog: 'תחליפי', originalFull: 'מקורי', analogFull: 'תחליפי' }
+            'ru': { original: 'ориг', analog: 'аналог', originalFull: 'ОРИГИНАЛ', analogFull: 'АНАЛОГ', mixedFull: 'СМЕШАННЫЙ' },
+            'en': { original: 'orig', analog: 'analog', originalFull: 'ORIGINAL', analogFull: 'ANALOG', mixedFull: 'MIXED' },
+            'he': { original: 'מקורי', analog: 'תחליפי', originalFull: 'מקורי', analogFull: 'תחליפי', mixedFull: 'מעורב' }
         };
         const currentLang = '{{ g.locale if g.locale else "ru" }}';
         const typeLabels = partTypeLabels[currentLang] || partTypeLabels['ru'];
@@ -823,6 +827,25 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function formatPlate(raw) {
+            if (!raw) return '';
+            const digits = String(raw).replace(/\D/g, '');
+            if (digits.length === 0) return escapeHtml(raw); // не цифровой номер — оставить как есть
+            if (digits.length <= 7) {
+                // Старый формат: XX-XXX-XX
+                let out = digits.slice(0, 2);
+                if (digits.length > 2) out += '-' + digits.slice(2, 5);
+                if (digits.length > 5) out += '-' + digits.slice(5, 7);
+                return out;
+            } else {
+                // Новый формат: XXX-XX-XXX
+                let out = digits.slice(0, 3);
+                if (digits.length > 3) out += '-' + digits.slice(3, 5);
+                if (digits.length > 5) out += '-' + digits.slice(5, 8);
+                return out;
+            }
         }
 
         async function copyTextToClipboard(text) {
@@ -1024,14 +1047,16 @@
                 const selectedParts = Array.isArray(order.selected_parts) ? [...order.selected_parts] : [];
                 if (map) selectedParts.sort((a, b) => partOrderIndex(a, map) - partOrderIndex(b, map));
                 const plateNumberEscaped = escapeHtml(order.plate_number);
+                const plateNumberFormatted = formatPlate(order.plate_number);
+                const plateNumberRaw = String(order.plate_number || '').replace(/\D/g, '') || plateNumberEscaped;
                 html += `
                     <tr>
                         <td><strong>#${order.id}</strong></td>
                         <td>${order.mechanic_name}</td>
                         <td>
                             <span class="plate-with-copy">
-                                <strong>${plateNumberEscaped}</strong>
-                                <button type="button" class="copy-plate-btn" data-copy-plate="${plateNumberEscaped}" title="Копировать" aria-label="Копировать гос номер">⧉</button>
+                                <strong>${plateNumberFormatted}</strong>
+                                <button type="button" class="copy-plate-btn" data-copy-plate="${plateNumberRaw}" title="Копировать" aria-label="Копировать гос номер">⧉</button>
                             </span>
                         </td>
                         <td>${order.category}</td>
@@ -1053,6 +1078,20 @@
                                         }
                                     }).join('')}
                                  </ul>
+                                    ${(() => {
+                                        const taggedParts = selectedParts.filter(p => typeof p === 'object' && p.hasOwnProperty('is_original'));
+                                        if (taggedParts.length === 0) {
+                                            // Старый заказ — нет тегов у деталей, используем order.is_original
+                                            return order.is_original
+                                                ? `<span class="type-badge type-original">${typeLabels.originalFull}</span>`
+                                                : `<span class="type-badge type-analog">${typeLabels.analogFull}</span>`;
+                                        }
+                                        const allOrig = taggedParts.every(p => p.is_original);
+                                        const allAnalog = taggedParts.every(p => !p.is_original);
+                                        if (allOrig)   return `<span class="type-badge type-original">${typeLabels.originalFull}</span>`;
+                                        if (allAnalog) return `<span class="type-badge type-analog">${typeLabels.analogFull}</span>`;
+                                        return `<span class="type-badge type-mixed">${typeLabels.mixedFull}</span>`;
+                                    })()}
                                     ${selectedParts.some(p => typeof p === 'object' && p.added_by_mechanic) 
                                         ? '<div class="added-notice">➕ Добавлена новая запчасть</div>' 
                                         : ''}
