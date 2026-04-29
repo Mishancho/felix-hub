@@ -467,10 +467,13 @@
         }
         /* Контролы qty и О/А внутри строки дропдауна */
         .item-controls {
-            display: inline-flex;
+            display: none;
             align-items: center;
             gap: 3px;
             flex-shrink: 0;
+        }
+        .parts-search-item.selected .item-controls {
+            display: inline-flex;
         }
         .item-qty {
             display: inline-flex;
