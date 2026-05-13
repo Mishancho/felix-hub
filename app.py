@@ -1224,9 +1224,14 @@ def submit_order():
             is_original=is_original_normalized,
             photo_url=data.get('photo_url'),
             comment=comment_normalized,
-            status='новый',
-            estimated_ready_at=ready_time_info['estimated_ready_at']  # Сохраняем расчетное время
+            status='новый'
         )
+
+        # Сохраняем расчетное время (если поле существует в БД)
+        try:
+            order.estimated_ready_at = ready_time_info['estimated_ready_at']
+        except:
+            pass  # Поле еще не добавлено в БД
         
         db.session.add(order)
         db.session.commit()

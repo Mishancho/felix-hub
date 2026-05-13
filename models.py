@@ -282,7 +282,8 @@ class Order(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Расчетное время готовности заказа (новое в v2.3)
-    estimated_ready_at = db.Column(db.DateTime, nullable=True)
+    # ВАЖНО: Раскомментировать после выполнения миграции БД
+    # estimated_ready_at = db.Column(db.DateTime, nullable=True)
     
     def to_dict(self, include_mechanic=False, lang=None):
         """Преобразовать в словарь для API"""
