@@ -1314,40 +1314,62 @@
         let notificationsEnabled = false;
 
         // Запросить разрешение на уведомления при загрузке страницы
-        if ('Notification' in window && Notification.permission === 'default') {
-            setTimeout(() => {
-                if (confirm('Включить уведомления о новых заказах?')) {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            notificationsEnabled = true;
-                            console.log('✅ Уведомления включены');
-                        }
-                    });
-                }
-            }, 2000);
-        } else if (Notification.permission === 'granted') {
-            notificationsEnabled = true;
+        if ('Notification' in window) {
+            console.log('🔔 Notification API доступен, текущее разрешение:', Notification.permission);
+
+            if (Notification.permission === 'default') {
+                setTimeout(() => {
+                    if (confirm('Включить уведомления о новых заказах?')) {
+                        Notification.requestPermission().then(permission => {
+                            console.log('📋 Результат запроса разрешения:', permission);
+                            if (permission === 'granted') {
+                                notificationsEnabled = true;
+                                console.log('✅ Уведомления включены');
+                                // Показываем тестовое уведомление
+                                new Notification('✅ Уведомления включены', {
+                                    body: 'Вы будете получать уведомления о новых заказах',
+                                    icon: '/static/favicon.ico'
+                                });
+                            }
+                        });
+                    }
+                }, 2000);
+            } else if (Notification.permission === 'granted') {
+                notificationsEnabled = true;
+                console.log('✅ Уведомления уже разрешены');
+            } else {
+                console.warn('⚠️ Уведомления заблокированы пользователем');
+            }
+        } else {
+            console.error('❌ Notification API не поддерживается браузером');
         }
 
         // Проверка новых заказов каждые 30 секунд
         async function checkNewOrders() {
+            console.log('🔍 Проверка новых заказов, enabled:', notificationsEnabled);
+
             if (!notificationsEnabled) return;
 
             try {
-                const response = await fetch('/api/orders?limit=1');
+                const response = await fetch('/api/orders?page=1&page_size=1');
                 const data = await response.json();
+
+                console.log('📦 Получены данные:', data);
 
                 if (data.orders && data.orders.length > 0) {
                     const latestOrder = data.orders[0];
+                    console.log('📋 Последний заказ:', latestOrder.id, 'Предыдущий:', lastOrderId);
 
                     // Если это первая проверка, просто сохраняем ID
                     if (lastOrderId === 0) {
                         lastOrderId = latestOrder.id;
+                        console.log('🎯 Инициализация: lastOrderId =', lastOrderId);
                         return;
                     }
 
                     // Если появился новый заказ
                     if (latestOrder.id > lastOrderId) {
+                        console.log('🆕 Обнаружен новый заказ!', latestOrder.id);
                         lastOrderId = latestOrder.id;
 
                         // Показываем уведомление
@@ -1369,7 +1391,7 @@
                     }
                 }
             } catch (error) {
-                console.error('Ошибка проверки новых заказов:', error);
+                console.error('❌ Ошибка проверки новых заказов:', error);
             }
         }
 

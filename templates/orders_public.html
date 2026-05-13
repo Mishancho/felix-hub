@@ -699,29 +699,48 @@
         let notificationsEnabled = false;
 
         // Запросить разрешение на уведомления при загрузке страницы
-        if ('Notification' in window && Notification.permission === 'default') {
-            setTimeout(() => {
-                if (confirm('Включить уведомления о готовности заказов?')) {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            notificationsEnabled = true;
-                            console.log('✅ Уведомления включены');
-                        }
-                    });
-                }
-            }, 2000);
-        } else if (Notification.permission === 'granted') {
-            notificationsEnabled = true;
+        if ('Notification' in window) {
+            console.log('🔔 Notification API доступен, текущее разрешение:', Notification.permission);
+
+            if (Notification.permission === 'default') {
+                setTimeout(() => {
+                    if (confirm('Включить уведомления о готовности заказов?')) {
+                        Notification.requestPermission().then(permission => {
+                            console.log('📋 Результат запроса разрешения:', permission);
+                            if (permission === 'granted') {
+                                notificationsEnabled = true;
+                                console.log('✅ Уведомления включены');
+                                // Показываем тестовое уведомление
+                                new Notification('✅ Уведомления включены', {
+                                    body: 'Вы будете получать уведомления о готовности заказов',
+                                    icon: '/static/favicon.ico'
+                                });
+                            }
+                        });
+                    }
+                }, 2000);
+            } else if (Notification.permission === 'granted') {
+                notificationsEnabled = true;
+                console.log('✅ Уведомления уже разрешены');
+            } else {
+                console.warn('⚠️ Уведомления заблокированы пользователем');
+            }
+        } else {
+            console.error('❌ Notification API не поддерживается браузером');
         }
 
         // Проверка изменения статусов заказов каждые 30 секунд
         async function checkPublicOrderStatusChanges() {
+            console.log('🔍 Проверка статусов заказов, enabled:', notificationsEnabled);
+
             if (!notificationsEnabled) return;
 
             try {
                 const params = new URLSearchParams(window.location.search);
                 const response = await fetch(`/api/orders?${params.toString()}`);
                 const data = await response.json();
+
+                console.log('📦 Получены заказы:', data);
 
                 if (data.orders) {
                     data.orders.forEach(order => {
@@ -730,11 +749,14 @@
                         // Если это первая проверка, просто сохраняем статус
                         if (!oldStatus) {
                             publicOrderStatuses[order.id] = order.status;
+                            console.log(`🎯 Инициализация заказа ${order.id}: статус = ${order.status}`);
                             return;
                         }
 
                         // Если статус изменился на "готово"
                         if (oldStatus !== 'готово' && order.status === 'готово') {
+                            console.log(`✅ Заказ ${order.id} готов! Было: ${oldStatus}, стало: ${order.status}`);
+
                             // Показываем уведомление
                             const notification = new Notification('✅ Заказ готов!', {
                                 body: `Заказ №${order.id}\nМеханик: ${order.mechanic_name}\nГос номер: ${order.plate_number}`,
@@ -755,7 +777,7 @@
                     });
                 }
             } catch (error) {
-                console.error('Ошибка проверки статусов заказов:', error);
+                console.error('❌ Ошибка проверки статусов заказов:', error);
             }
         }
 
