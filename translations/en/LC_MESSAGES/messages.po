@@ -836,3 +836,22 @@ msgstr "Search parts..."
 msgid "search_no_results"
 msgstr "No results found"
 
+
+# Estimated ready time
+msgid "order_ready_in_minutes"
+msgstr "Your order will be ready in %d min."
+
+msgid "estimated_ready_time"
+msgstr "Estimated ready time:"
+
+msgid "queue_position"
+msgstr "Queue position:"
+
+msgid "ready_in"
+msgstr "Ready in"
+
+msgid "minutes_short"
+msgstr "min"
+
+msgid "ready_at"
+msgstr "Ready at"

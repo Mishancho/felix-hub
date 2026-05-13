@@ -855,6 +855,30 @@ def mechanic_orders():
 
         setattr(order, 'selected_parts_localized', sort_selected_parts_by_sort_order(localized_parts, order.category, cache=sort_cache))
 
+    # Рассчитываем время готовности для активных заказов
+    processing_time_minutes = int(os.getenv('ORDER_PROCESSING_TIME_MINUTES', '10'))
+    current_time = datetime.utcnow()
+    tz = ZoneInfo(app.config['APP_TIMEZONE'])
+
+    # Получаем все активные заказы механика для расчета очереди
+    active_orders = [o for o in orders if o.status in ['новый', 'в работе']]
+    active_orders.sort(key=lambda x: x.created_at)
+
+    cumulative_time = 0
+    for order in active_orders:
+        elapsed_time = current_time - order.created_at
+        elapsed_minutes = elapsed_time.total_seconds() / 60
+        remaining_minutes = max(0, processing_time_minutes - elapsed_minutes)
+        cumulative_time += remaining_minutes
+
+        # Расчетное время готовности
+        estimated_ready_at = current_time + timedelta(minutes=cumulative_time)
+        ready_at_local = estimated_ready_at.replace(tzinfo=timezone.utc).astimezone(tz)
+
+        # Добавляем атрибуты к заказу
+        setattr(order, 'estimated_minutes', int(cumulative_time))
+        setattr(order, 'estimated_ready_time', ready_at_local.strftime('%H:%M'))
+
     return render_template('mechanic/orders.html', orders=orders)
 
 

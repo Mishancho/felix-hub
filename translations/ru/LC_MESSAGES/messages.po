@@ -843,3 +843,22 @@ msgid "search_no_results"
 msgstr "Ничего не найдено"
 
 # Updated additives translations
+
+# Estimated ready time
+msgid "order_ready_in_minutes"
+msgstr "Ваш заказ будет готов через %d мин."
+
+msgid "estimated_ready_time"
+msgstr "Примерное время готовности:"
+
+msgid "queue_position"
+msgstr "Позиция в очереди:"
+
+msgid "ready_in"
+msgstr "Готов через"
+
+msgid "minutes_short"
+msgstr "мин"
+
+msgid "ready_at"
+msgstr "Готов в"

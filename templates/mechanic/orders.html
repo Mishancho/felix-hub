@@ -148,14 +148,17 @@
         .order-top {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .order-id {
             font-weight: 700;
             color: #333;
             font-size: 20px;
+            flex-shrink: 0;
         }
 
         .status-badge {
@@ -381,7 +384,14 @@
                 <div class="order-card">
                     <div class="order-top">
                         <div class="order-id">{{ _('order') }} №{{ order.id }}</div>
-                        <span class="status-badge {{ order.status }}">{{ get_status_translation(order.status) }}</span>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <span class="status-badge {{ order.status }}">{{ get_status_translation(order.status) }}</span>
+                            {% if order.status in ['новый', 'в работе'] and order.estimated_minutes is defined %}
+                                <span style="background: #f0f9ff; color: #1e40af; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; white-space: nowrap;">
+                                    ⏱️ {{ _('ready_in') }} {{ order.estimated_minutes }} {{ _('minutes_short') }} ({{ order.estimated_ready_time }})
+                                </span>
+                            {% endif %}
+                        </div>
                     </div>
 
                     <div class="order-details">

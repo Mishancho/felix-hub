@@ -839,3 +839,22 @@ msgstr "חיפוש חלקים..."
 msgid "search_no_results"
 msgstr "לא נמצאו תוצאות"
 
+
+# Estimated ready time
+msgid "order_ready_in_minutes"
+msgstr "ההזמנה שלך תהיה מוכנה בעוד %d דק'."
+
+msgid "estimated_ready_time"
+msgstr "זמן משוער להכנה:"
+
+msgid "queue_position"
+msgstr "מיקום בתור:"
+
+msgid "ready_in"
+msgstr "מוכן בעוד"
+
+msgid "minutes_short"
+msgstr "דק'"
+
+msgid "ready_at"
+msgstr "מוכן ב"

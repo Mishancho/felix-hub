@@ -1377,10 +1377,10 @@
 
                         successMessage += `<br><br>`;
                         successMessage += `<div style="background: #f0f9ff; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #3b82f6;">`;
-                        successMessage += `<div style="font-size: 16px; font-weight: 600; color: #1e40af; margin-bottom: 8px;">⏱️ Ваш заказ будет готов через ${minutes} мин.</div>`;
-                        successMessage += `<div style="font-size: 14px; color: #475569;">Примерное время готовности: <strong>${readyAt}</strong></div>`;
+                        successMessage += `<div style="font-size: 16px; font-weight: 600; color: #1e40af; margin-bottom: 8px;">⏱️ {{ _('order_ready_in_minutes') | format(minutes) }}</div>`;
+                        successMessage += `<div style="font-size: 14px; color: #475569;">{{ _('estimated_ready_time') }} <strong>${readyAt}</strong></div>`;
                         if (queuePosition > 1) {
-                            successMessage += `<div style="font-size: 13px; color: #64748b; margin-top: 5px;">Позиция в очереди: ${queuePosition}</div>`;
+                            successMessage += `<div style="font-size: 13px; color: #64748b; margin-top: 5px;">{{ _('queue_position') }} ${queuePosition}</div>`;
                         }
                         successMessage += `</div>`;
                     }
