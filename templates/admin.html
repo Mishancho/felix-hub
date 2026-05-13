@@ -1327,8 +1327,7 @@
                                 console.log('✅ Уведомления включены');
                                 // Показываем тестовое уведомление
                                 new Notification('✅ Уведомления включены', {
-                                    body: 'Вы будете получать уведомления о новых заказах',
-                                    icon: '/static/favicon.ico'
+                                    body: 'Вы будете получать уведомления о новых заказах'
                                 });
                             }
                         });
@@ -1375,7 +1374,6 @@
                         // Показываем уведомление
                         const notification = new Notification('🆕 Новый заказ!', {
                             body: `Заказ №${latestOrder.id}\nМеханик: ${latestOrder.mechanic_name}\nГос номер: ${latestOrder.plate_number}`,
-                            icon: '/static/favicon.ico',
                             tag: `new-order-${latestOrder.id}`,
                             requireInteraction: true
                         });

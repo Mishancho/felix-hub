@@ -631,8 +631,7 @@
                                 console.log('✅ Уведомления включены');
                                 // Показываем тестовое уведомление
                                 new Notification('✅ Уведомления включены', {
-                                    body: 'Вы будете получать уведомления о готовности заказов',
-                                    icon: '/static/favicon.ico'
+                                    body: 'Вы будете получать уведомления о готовности заказов'
                                 });
                             }
                         });
@@ -679,7 +678,6 @@
                             // Показываем уведомление
                             const notification = new Notification('✅ Заказ готов!', {
                                 body: `Заказ №${order.id}\nГос номер: ${order.plate_number}\nМожете забирать запчасти`,
-                                icon: '/static/favicon.ico',
                                 tag: `ready-order-${order.id}`,
                                 requireInteraction: true
                             });
