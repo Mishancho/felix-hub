@@ -865,19 +865,16 @@ def mechanic_orders():
     active_orders = [o for o in orders if o.status in ['новый', 'в работе', 'в ожидании запчасти']]
     active_orders.sort(key=lambda x: x.created_at)
 
-    cumulative_time = 0
-    for order in active_orders:
-        elapsed_time = current_time - order.created_at
-        elapsed_minutes = elapsed_time.total_seconds() / 60
-        remaining_minutes = max(0, processing_time_minutes - elapsed_minutes)
-        cumulative_time += remaining_minutes
+    # Каждый заказ в очереди = полные 10 минут
+    for position, order in enumerate(active_orders, start=1):
+        cumulative_time = position * processing_time_minutes
 
         # Расчетное время готовности
         estimated_ready_at = current_time + timedelta(minutes=cumulative_time)
         ready_at_local = estimated_ready_at.replace(tzinfo=timezone.utc).astimezone(tz)
 
         # Добавляем атрибуты к заказу
-        setattr(order, 'estimated_minutes', int(cumulative_time))
+        setattr(order, 'estimated_minutes', cumulative_time)
         setattr(order, 'estimated_ready_time', ready_at_local.strftime('%H:%M'))
 
     return render_template('mechanic/orders.html', orders=orders)
@@ -1069,20 +1066,14 @@ def public_orders():
         Order.status.in_(['новый', 'в работе', 'в ожидании запчасти'])
     ).order_by(Order.created_at.asc()).all()
 
-    cumulative_time = 0
+    # Каждый заказ в очереди = полные 10 минут
     order_times = {}
-
-    for active_order in all_active_orders:
-        elapsed_time = current_time - active_order.created_at
-        elapsed_minutes = elapsed_time.total_seconds() / 60
-        remaining_minutes = max(0, processing_time_minutes - elapsed_minutes)
-        cumulative_time += remaining_minutes
-
-        # Расчетное время готовности
+    for position, active_order in enumerate(all_active_orders, start=1):
+        cumulative_time = position * processing_time_minutes
         estimated_ready_at = current_time + timedelta(minutes=cumulative_time)
 
         order_times[active_order.id] = {
-            'estimated_minutes': int(cumulative_time),
+            'estimated_minutes': cumulative_time,
             'estimated_ready_at': estimated_ready_at
         }
 
@@ -1114,7 +1105,7 @@ def calculate_estimated_ready_time():
     Логика:
     - Базовое время обработки одного заказа: 10 минут (настраивается через ORDER_PROCESSING_TIME_MINUTES)
     - Учитываются заказы со статусами 'новый', 'в работе' и 'в ожидании запчасти'
-    - Для каждого активного заказа рассчитывается оставшееся время
+    - Каждый заказ в очереди = полные 10 минут (независимо от прошедшего времени)
     - Новый заказ добавляется в конец очереди
 
     Returns:
@@ -1134,29 +1125,16 @@ def calculate_estimated_ready_time():
     ).order_by(Order.created_at.asc()).all()
 
     current_time = datetime.utcnow()
-    total_remaining_minutes = 0
 
-    # Рассчитываем оставшееся время для каждого активного заказа
-    for order in active_orders:
-        # Время с момента создания заказа
-        elapsed_time = current_time - order.created_at
-        elapsed_minutes = elapsed_time.total_seconds() / 60
-
-        # Оставшееся время для этого заказа
-        remaining_minutes = max(0, processing_time_minutes - elapsed_minutes)
-        total_remaining_minutes += remaining_minutes
-
-    # Добавляем время для нового заказа
-    total_remaining_minutes += processing_time_minutes
-
-    # Округляем до целых минут
-    estimated_minutes = int(round(total_remaining_minutes))
+    # Каждый заказ в очереди = полные 10 минут
+    # Новый заказ добавляется в конец: (количество активных + 1) * 10
+    total_minutes = (len(active_orders) + 1) * processing_time_minutes
 
     # Рассчитываем точное время готовности
-    estimated_ready_at = current_time + timedelta(minutes=estimated_minutes)
+    estimated_ready_at = current_time + timedelta(minutes=total_minutes)
 
     return {
-        'estimated_minutes': estimated_minutes,
+        'estimated_minutes': total_minutes,
         'estimated_ready_at': estimated_ready_at,
         'queue_position': len(active_orders) + 1,
         'active_orders_count': len(active_orders)
@@ -1357,22 +1335,16 @@ def get_orders_queue():
 
         # Получаем все активные заказы
         active_orders = Order.query.filter(
-            Order.status.in_(['новый', 'в работе'])
+            Order.status.in_(['новый', 'в работе', 'в ожидании запчасти'])
         ).order_by(Order.created_at.asc()).all()
 
         current_time = datetime.utcnow()
         tz = ZoneInfo(app.config['APP_TIMEZONE'])
         queue_info = []
-        cumulative_time = 0
 
-        for order in active_orders:
-            # Время с момента создания заказа
-            elapsed_time = current_time - order.created_at
-            elapsed_minutes = elapsed_time.total_seconds() / 60
-
-            # Оставшееся время для этого заказа
-            remaining_minutes = max(0, processing_time_minutes - elapsed_minutes)
-            cumulative_time += remaining_minutes
+        # Каждый заказ в очереди = полные 10 минут
+        for position, order in enumerate(active_orders, start=1):
+            cumulative_time = position * processing_time_minutes
 
             # Расчетное время готовности
             estimated_ready_at = current_time + timedelta(minutes=cumulative_time)
@@ -1384,13 +1356,13 @@ def get_orders_queue():
                 'plate_number': order.plate_number,
                 'status': order.status,
                 'created_at': order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'elapsed_minutes': int(elapsed_minutes),
-                'remaining_minutes': int(remaining_minutes),
+                'position': position,
+                'estimated_minutes': cumulative_time,
                 'estimated_ready_at': ready_at_local.strftime('%H:%M')
             })
 
         # Время ожидания для нового заказа
-        new_order_wait_time = int(cumulative_time + processing_time_minutes)
+        new_order_wait_time = (len(active_orders) + 1) * processing_time_minutes
         new_order_ready_at = current_time + timedelta(minutes=new_order_wait_time)
         new_order_ready_local = new_order_ready_at.replace(tzinfo=timezone.utc).astimezone(tz)
 
